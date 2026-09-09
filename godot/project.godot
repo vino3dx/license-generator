@@ -26,7 +26,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/license/plugin.cfg", "res://addons/license_manager/plugin.cfg")
+enabled=PackedStringArray("res://addons/license_manager/plugin.cfg")
 
 [file_customization]
 

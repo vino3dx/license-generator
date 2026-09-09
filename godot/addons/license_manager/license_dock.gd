@@ -23,6 +23,38 @@ func _ready() -> void:
 
 	vbox.add_child(HSeparator.new())
 
+	# ==========================================
+	# === 【新增】显示 Project ID 与 一键复制按钮 ===
+	# ==========================================
+	var checker = LicenseManagerScript.new()
+	var proj_id: String = checker.get_project_code()
+
+	var id_hbox := HBoxContainer.new()
+	id_hbox.add_theme_constant_override("separation", 6)
+	vbox.add_child(id_hbox)
+
+	var id_label := Label.new()
+	id_label.text = "项目 ID: " + proj_id
+	id_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	id_hbox.add_child(id_label)
+
+	var copy_btn := Button.new()
+	copy_btn.text = "复制 ID"
+	copy_btn.pressed.connect(func():
+		DisplayServer.clipboard_set(proj_id)
+		copy_btn.text = "已复制!"
+		print("【LSM】已成功复制 Project ID 到剪贴板: ", proj_id)
+		
+		# 1.5 秒后恢复按钮文字
+		var timer := get_tree().create_timer(1.5)
+		await timer.timeout
+		if is_instance_valid(copy_btn):
+			copy_btn.text = "复制 ID"
+	)
+	id_hbox.add_child(copy_btn)
+
+	vbox.add_child(HSeparator.new())
+
 	checkbox = CheckBox.new()
 	checkbox.text = "启用授权验证 (License)"
 	checkbox.toggled.connect(_on_toggled)
@@ -53,9 +85,7 @@ func _on_toggled(pressed: bool) -> void:
 	config.load(LICENSE_CONFIG_PATH)
 	config.set_value("license", "enabled", pressed)
 
-	print("实际写入路径: ", ProjectSettings.globalize_path(LICENSE_CONFIG_PATH))
-
-	var err = config.save(LICENSE_CONFIG_PATH)
+	var err := config.save(LICENSE_CONFIG_PATH)
 	if err != OK:
 		push_error("【LSM】保存配置文件失败: ", err)
 	_refresh()
@@ -82,9 +112,6 @@ func _refresh() -> void:
 		status_label.add_theme_color_override("font_color", Color(0.9, 0.4, 0.4))
 
 
-# 仅用于编辑器内预览授权文件是否有效。
-# 这里不会触发退出操作（那是运行时 LicenseManager._ready() 才做的事），
-# 纯粹调用 evaluate_license() 这个只读函数来展示状态。
 func _refresh_license_detail() -> void:
 	var checker = LicenseManagerScript.new()
 	var result: Dictionary = checker.evaluate_license()
