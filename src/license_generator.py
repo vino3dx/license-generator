@@ -16,10 +16,8 @@ from Crypto.Util.Padding import pad
 # =========================
 # 安全配置区
 # =========================
-# 管理员登录密码哈希（默认密码 123456 的 SHA256 值）
-ADMIN_PASSWORD_HASH = (
-    "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92"
-)
+# 管理员登录密码哈希（默认密码 mzkj112233 的 SHA256 值）
+ADMIN_PASSWORD_HASH = ("b6c52ce517054a5c5f1f87b1d16db109c0cc5b9231407da8cc02b1d9dad22e2a")
 
 # 统一解密秘盐（须与 Godot 端的 SHARED_SECRET 保持完全一致）
 SHARED_SECRET = "MyStudio_Secret_2026"
@@ -221,7 +219,7 @@ def show_main_window():
     global main_window, date_entry, days_entry, filename_entry, issue_value, project_entry
 
     main_window = tk.Tk()
-    main_window.title("授权文件生成器 v2")
+    main_window.title("授权文件生成器 v2.2.1")
 
     center_window(main_window, 440, 380)
     main_window.resizable(False, False)
@@ -231,7 +229,7 @@ def show_main_window():
     tk.Label(main_window, text="签发日期 (自动，本机当前日期):").pack(pady=(12, 2))
     tk.Label(main_window, textvariable=issue_value, fg="#555555").pack()
 
-    tk.Label(main_window, text="项目标识 (粘贴 Godot 端的 Project ID):").pack(pady=(10, 2))
+    tk.Label(main_window, text="项目ID标识 (粘贴 IDE 端的 Project ID):").pack(pady=(10, 2))
     project_entry = tk.Entry(main_window, width=30)
     project_entry.pack()
 
@@ -293,3 +291,6 @@ tk.Button(
 ).pack(pady=20)
 
 password_window.mainloop()
+
+# ========== 快捷命令 ===============
+#【打包】 pyinstaller --onefile --windowed license_generator.py
