@@ -33,6 +33,8 @@ filename_entry = None
 issue_value = None
 project_entry = None
 
+TEST_MODE = True ## 到期日期可以早于签发日期
+
 
 # =========================
 # 通用函数：窗口屏幕居中
@@ -74,7 +76,8 @@ def generate_license(
 
         issue_dt = datetime.strptime(issue_date, "%Y-%m-%d")
         expire_dt = datetime.strptime(expire_date, "%Y-%m-%d")
-        if issue_dt > expire_dt:
+
+        if not TEST_MODE and issue_dt > expire_dt:
             messagebox.showerror("错误", "签发日期不能晚于到期日期！")
             return None, None, None, None, None
 
