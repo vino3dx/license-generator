@@ -1,10 +1,10 @@
-# Godot 4+ specific ignores
-/godot/.godot/
-/android/
-
-# Python & PyInstaller
-/src/build/
-/src/dist/
-*.spec
+.godot/
+*.tmp
 __pycache__/
-*.py[cod]
+python/build/
+python/dist/
+python/*.spec
+# 含客户信息 / 本机设置,不入库
+python/aegis_generator.json
+python/issued_licenses.csv
+godot/license.dat
