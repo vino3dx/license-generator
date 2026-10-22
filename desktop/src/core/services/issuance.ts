@@ -12,6 +12,7 @@ import {
   setSupersededBy,
   withTransaction
 } from '@core/db'
+import { buildLicenseContainer } from '@core/license/container'
 import { formatTimestamp, parseTimestamp } from '@core/license/encoding'
 import { isLicenseError } from '@core/license/errors'
 import { issueMachineLicense } from '@core/license/machine-license'
@@ -230,7 +231,9 @@ function commitPrepared(
   const writtenFiles: string[] = []
   try {
     for (const item of prepared) {
-      deps.files.writeAtomic(item.license.fileName, item.envelope)
+      // license.dat 使用容器格式：内嵌当前 control.cert（约定 v3.1 §3），裸信封不再分发
+      const container = buildLicenseContainer(item.envelope, certificate.record.envelope)
+      deps.files.writeAtomic(item.license.fileName, container)
       writtenFiles.push(item.license.fileName)
     }
   } catch (error) {
@@ -396,7 +399,11 @@ function resolveExpiry(requested: string | undefined, nowMs: number, controlExpi
     throw new ServiceError('license_expiry_invalid', '到期时间必须晚于当前时间')
   }
   if (expiresMs > controlLatest) {
-    throw new ServiceError('license_expiry_invalid', '子机授权到期时间不得晚于中控证书到期时间')
+    throw new ServiceError(
+      'license_expiry_invalid',
+      `子机授权到期时间不得晚于中控证书到期时间（上限 ${formatTimestamp(new Date(controlLatest))}）`,
+      { maxExpiresAt: formatTimestamp(new Date(controlLatest)) }
+    )
   }
   return formatTimestamp(new Date(expiresMs))
 }

@@ -14,9 +14,11 @@ import {
   updateProjectName,
   withTransaction
 } from '@core/db'
+import { parseLicenseContainer } from '@core/license/container'
 import { formatTimestamp } from '@core/license/encoding'
 import { isLicenseError } from '@core/license/errors'
 import { verifyMachineLicense } from '@core/license/machine-license'
+import { verifyVendorCertificate } from '@core/license/vendor-license'
 import { parseEnvelope } from '@core/license/envelope'
 import type {
   DeviceDto,
@@ -267,6 +269,10 @@ export function getDeviceLicenseStatus(
   return { device, license, file: checkLicenseFile(deps, license.fileName, license.payloadSha256, projectId, deviceId) }
 }
 
+/**
+ * license.dat 现在是容器格式（内嵌 control.cert）。校验逻辑与子机一致（约定 v3.1 §4）：
+ * 解析容器 → 厂商公钥验内嵌中控证书 → 证书内委托公钥验子机授权 → 比对数据库摘要。
+ */
 export function checkLicenseFile(
   deps: ResolvedDependencies,
   fileName: string,
@@ -277,12 +283,15 @@ export function checkLicenseFile(
   if (!deps.files.exists(fileName)) {
     return { ok: false, code: 'file_missing' }
   }
+  if (deps.vendorKeyObject === null) {
+    return { ok: false, code: 'vendor_key_missing' }
+  }
   const text = deps.files.read(fileName)
   try {
-    const certificate = loadVerifiedControlCertificate(deps)
-    // 先按协议验签（完整性），再比对数据库记录的 payload 摘要
-    verifyMachineLicense(text, certificate.verified, { projectId, deviceId }, deps.now().getTime())
-    const opened = parseEnvelope(text, 'machine-license')
+    const container = parseLicenseContainer(new TextEncoder().encode(text))
+    const certificate = verifyVendorCertificate(container.control, deps.vendorKeyObject, deps.now().getTime())
+    verifyMachineLicense(container.license, certificate, { projectId, deviceId }, deps.now().getTime())
+    const opened = parseEnvelope(container.license, 'machine-license')
     const digest = createHash('sha256').update(opened.payloadBytes).digest('hex')
     if (digest !== expectedSha256) {
       return { ok: false, code: 'file_hash_mismatch' }

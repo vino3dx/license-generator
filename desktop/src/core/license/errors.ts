@@ -8,6 +8,7 @@ export type LicenseErrorCode =
   | 'envelope_malformed'
   | 'payload_malformed'
   | 'payload_invalid'
+  | 'container_malformed'
   | 'unsupported_version'
   | 'unsupported_algorithm'
   | 'type_mismatch'
