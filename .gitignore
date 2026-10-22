@@ -1,5 +1,7 @@
 .godot/
 *.tmp
+.workbuddy-ai/
+
 __pycache__/
 python/build/
 python/dist/
