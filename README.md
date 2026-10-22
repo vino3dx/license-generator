@@ -1,36 +1,52 @@
-# Aegis 3.0 — 离线授权
+# Aegis — 离线授权（aegis-license/v1）
 
 ```
 aegis/
-├─ godot/     Godot 工程 + addons/aegis 插件
-└─ python/    aegis_generator.py 授权生成器 (pip install -r requirements.txt)
+├─ godot/              Godot 工程 + addons/aegis 插件 + addons.zip 分发包
+├─ desktop/            中控主机（Electron + Vue 3 + TypeScript）：签发 / 管理授权
+│  ├─ src/core/license 协议实现（信封、RS256、严格 JSON）
+│  ├─ docs/            协议文档 license-protocol.md
+│  ├─ verifier-godot/  GDScript 验签器源码（同步进 Godot 插件）
+│  └─ tests/           协议与 Godot 联调测试
+└─ python/             旧版 AES 授权生成器（见文末「历史组件」）
 ```
 
+## 授权模型
+
+两层 RSA 证书链（RSASSA-PKCS1-v1_5 + SHA-256，2048 位）：
+
+1. 厂商用**厂商私钥**签发中控授权证书 `control.cert`（`vendor-control`），证书里带委托公钥；
+2. 客户中控用**委托私钥**签发子机授权 `license.dat`（`machine-license`）；
+3. 子机用插件内置的**厂商公钥**验证书，再用证书内的委托公钥验子机授权，
+   并校验项目 ID、设备 ID、状态、有效期与时钟。
+
+协议细节：`desktop/docs/license-protocol.md`。
+
 ## 日常流程
-1. Godot 里启用插件(工程已启用),右侧 Dock 可看到 **项目 ID** 与 **密钥指纹**。
-2. 运行 `python/aegis_generator.py` → 登录 → 密钥与项目 ID 自动读取(指纹应与 Dock 一致)→ 填客户、天数或到期日 → 生成 `license.dat`。
-3. 把 `license.dat` 放到导出 exe 的同一目录。
 
-**打包后取项目 ID(推荐)**: Dock 里复制「导出标记」→ 导出预设 → Windows → 应用程序 → 商标(Trademarks) 粘贴(一次即可,改工程名/密钥后需更新)→ 导出。生成器点「从导出的 exe 读取」即可自动填入项目 ID,并比对密钥指纹。
+1. Godot 工程启用 Aegis 插件，Dock 显示**项目 ID**、**设备 ID**、**密钥指纹**；
+2. 中控主机导入 `control.cert`，按项目 ID + 设备 ID 签发子机授权；
+3. 把 `control.cert` 与 `license.dat` 放到工程根目录（导出后放 exe 同目录）；
+4. 运行 / 导出。授权无效时插件会暂停场景、显示错误码并以退出码 1 结束进程。
 
-## 3.0 相对 2.x 的变化
-- **改名**: `license_manager` → `aegis`;autoload 名 `LicenseManager` → `Aegis`。
-- **密钥单点维护**: 只改 `godot/addons/aegis/aegis_secret.gd`,生成器自动读取,不再两边手动同步。
-- **项目 ID 自动算**: 生成器可直接读 `project.godot` 的工程名,算法与插件一致。
-- **日期改用本地日期**(旧版用 UTC,中国时区会晚 8 小时失效)。到期日含当天,次日 0 点失效。
-- **运行中复查**: 启动校验 + 每 10 分钟 + 窗口重新获得焦点时复查,长时间开着的程序也会到期退出。
-- **失败有提示**: 弹窗说明原因和错误码后退出(旧版静默退出)。
-- **导出版强制校验**: `aegis.cfg` 的关闭开关只在编辑器内生效。
-- **autoload 不再被抹掉**: 旧版在 `_exit_tree` 删除 autoload,关编辑器时会把它从 project.godot 移除;现改为仅在启用/停用插件时增删,Dock 还会在缺失时红字警告。
-- **防回拨**: 时间记录加校验、允许 6 小时误差;记录损坏时不误伤客户。
-- **生成器**: 去掉 TEST_MODE,签发日期可编辑(可造"已到期"测试授权);新增客户备注、生成后解密自检、覆盖确认、`issued_licenses.csv` 签发记录、记住上次目录;修复 PyInstaller 打包后默认目录错误。
-- 授权 JSON 新增 `v`、`customer` 字段。
+Godot 侧的安装、配置、错误码与测试方式见 [`godot/README.md`](godot/README.md)。
+
+## 分发包
+
+```bash
+python godot/package_addons.py     # 重新生成 godot/addons.zip
+```
 
 ## 注意
-- **改工程名 / 改密钥 = 所有旧授权失效**,需重新签发。
-- `godot/license.dat` 是开发测试用样例(工程名 aegis,有效期至 2027-03-31),正式使用前请自己重新生成。
-- 发布前务必把 `aegis_secret.gd` 里的默认密钥换成自己的随机串,并用 `python aegis_generator.py --hash 新密码` 换掉管理员密码哈希。
-- 离线 + 对称密钥的固有局限: 密钥在 exe 内可被提取,时间记录可被删除。防君子不防高手;需要更强再升级 RSA 签名。
 
-## 打包生成器
-`pyinstaller --onefile --windowed aegis_generator.py` (把 exe 放在 aegis/python/ 下即可自动找到 godot/ 里的密钥)
+- 厂商公钥当前仍是**空占位**（`godot/addons/aegis/aegis_vendor_key.gd`），
+  空公钥会让所有授权以 `0x062` 失败——这是刻意的 fail-closed，不是缺陷；
+  发布前必须替换为生产公钥并重新打包。
+- 生产授权链路与正式导出验收**尚未完成**，详见 `godot/README.md` 第 9 节。
+- 改工程名会改变项目 ID，所有旧授权失效，需要重新签发。
+
+## 历史组件
+
+`python/aegis_generator.py` 是 3.x 时代的 **AES-256-CBC 对称加密**生成器，产出的是旧格式
+`license.dat`，与当前插件的 `aegis-license/v1` 信封格式**不兼容**，请勿用于新授权。
+它保留在仓库中仅为兼容旧版本客户，后续是否下线由中控侧统一决定。
