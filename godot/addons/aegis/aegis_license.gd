@@ -1,18 +1,21 @@
 extends RefCounted
-## Aegis 授权核心（aegis-license/v1，纯静态，不依赖节点）
+## Aegis 授权核心（aegis-license/v1 + 共同约定 v3.1，纯静态，不依赖节点）
+##
+## license.dat 是容器（严格 JSON）：{"v":1,"license":"<machine-license 信封>","control":"<vendor-control 信封>"}
+## 信封与 payload 一字不改；子机不再读取单独的 control.cert 文件。
 ##
 ## 流程：
-##   设备 ID → 内置厂商公钥验中控证书（control.cert）
-##   → 证书内委托公钥验子机授权（license.dat）
-##   → 项目/设备/状态/有效期绑定校验 → 防回拨 → 到期判断
+##   设备 ID（project_id 加盐）→ 严格解析容器 → 内置厂商公钥验中控证书
+##   → 证书内委托公钥验子机授权 → 项目/设备/状态/有效期绑定校验 → 防回拨 → 到期判断
 ##
 ## 安全约定：
 ## - 先验签、后解析业务字段；验签失败一律拒绝，不降级、不静默放行；
 ## - 厂商公钥是编译期常量，不来自配置或授权文件；
-## - 任何一步失败都返回稳定错误码，由 aegis.gd 提示并退出。
+## - 任何一步失败都返回稳定错误码，由 aegis.gd 提示并处理。
 
 const Secret := preload("res://addons/aegis/aegis_secret.gd")
 const Verifier := preload("res://addons/aegis/aegis_rsa_verify.gd")
+const StrictJson := preload("res://addons/aegis/aegis_strict_json.gd")
 const Device := preload("res://addons/aegis/aegis_device.gd")
 const VendorKey := preload("res://addons/aegis/aegis_vendor_key.gd")
 
@@ -20,15 +23,17 @@ const CONFIG_PATH := "res://addons/aegis/aegis.cfg"
 const RECORD_PATH := "user://aegis_time.dat" # 上次运行时间记录（防回拨系统时钟）
 const ROLLBACK_TOLERANCE := 21600 # 允许系统时钟回拨的秒数（6 小时）
 const CLOCK_SKEW := 300 # 与协议一致：签发时间允许 5 分钟时钟容差
+const RENEW_WINDOW := 30 # 距到期不足该天数进入临期，开始后台拉取（天）
 
 const LICENSE_FILE := "license.dat"
-const CONTROL_FILE := "control.cert"
+const LEGACY_CONTROL_FILE := "control.cert" # 仅用于识别旧版两文件布局，不再读取其内容
+const CONTAINER_MAX := 16384 # 容器大小上限（字节）
 
 const ERR_OK := "0x000"
 const ERR_LICENSE_MISSING := "0x011"
 const ERR_LICENSE_EMPTY := "0x012"
-const ERR_CONTROL_MISSING := "0x013"
-const ERR_CONTROL_EMPTY := "0x014"
+const ERR_CONTAINER_INVALID := "0x015"
+const ERR_LEGACY_FORMAT := "0x016"
 const ERR_CONTROL_INVALID := "0x021"
 const ERR_LICENSE_INVALID := "0x022"
 const ERR_CONTROL_TIME := "0x023"
@@ -44,18 +49,18 @@ const ERR_DEVICE_UNAVAILABLE := "0x061"
 const ERR_VENDOR_KEY_MISSING := "0x062"
 const ERR_EXPIRED := "0x099"
 
-## 错误码对应的可诊断说明，运行期提示框与编辑器 Dock 共用
+## 错误码对应的可诊断说明，运行期申请码界面与编辑器 Dock 共用
 const HINTS := {
 	ERR_LICENSE_MISSING: "未找到 license.dat（编辑器：工程根目录；导出后：exe 同目录）",
 	ERR_LICENSE_EMPTY: "license.dat 为空",
-	ERR_CONTROL_MISSING: "未找到 control.cert（中控授权证书）",
-	ERR_CONTROL_EMPTY: "control.cert 为空",
+	ERR_CONTAINER_INVALID: "license.dat 不是合法的授权容器（应为 {\"v\":1,\"license\",\"control\"}）",
+	ERR_LEGACY_FORMAT: "旧版授权格式（裸信封或 control.cert 分离文件）：请向中控重新获取 license.dat",
 	ERR_CONTROL_INVALID: "中控证书验签失败：证书被改动，或不是本厂商签发",
 	ERR_LICENSE_INVALID: "子机授权验签失败：授权被改动、密钥不匹配或内容格式非法",
 	ERR_CONTROL_TIME: "中控证书已过期或尚未生效",
 	ERR_PROJECT_MISMATCH: "项目 ID 不在中控授权范围内，或与授权不匹配",
 	ERR_CONTROL_ID_MISMATCH: "子机授权不属于当前中控证书",
-	ERR_DEVICE_MISMATCH: "设备 ID 与授权不匹配：授权不是签发给这台机器",
+	ERR_DEVICE_MISMATCH: "设备 ID 与授权不匹配：授权不是签发给这台机器（或这个项目）",
 	ERR_STATUS_INACTIVE: "授权状态不是 active（可能已被吊销）",
 	ERR_OUT_OF_CONTROL_WINDOW: "子机授权有效期超出中控证书有效期",
 	ERR_EXPIRY_ORDER: "到期时间早于签发时间",
