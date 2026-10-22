@@ -1,0 +1,205 @@
+{
+  "protocol": "aegis-license/v1",
+  "schema_version": 1,
+  "note": "TEST ONLY：由 tests/fixtures/keys 中的测试密钥生成，禁止用于生产",
+  "keys": {
+    "vendor": {
+      "kid": "4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U",
+      "public": {
+        "kty": "RSA",
+        "n": "lqzyZQ7V_-BwqK3SrXxUiEcbZHMeEm1WaJp_cBpcPQFfCGbniUOtOoZzASdFw3cn76Dg5F46KtnqPq-Sku1u2B-j02_nVuA7vKpyTa2an9hvvnR9mYLv8r8HpENBPZZIfytKF7TDrCewwa9oMKiIegtKp4cbvGcDBN7DFp0Hm3gaNWVeTqCD43rgR1Sazc9tEpi-KihuoL0XTgSebEFdbTOhqtxKAL5QEiZTHxWl9PLW6IF8SfLnDC9VlUiMOr9eVCCWCXYZiRsVGIg-Pdcbk7H5zUWg9GLuVm5Dvww2w7xKbvJs0AwAIhcfuG4OBb7dAcyPnS2w2DgTbNfe5omVGw",
+        "e": "AQAB"
+      },
+      "montgomery": {
+        "n0inv": 17133,
+        "r2_hex": "4b8a529c726be63e4ffe3f026f2a569cf6fadd439a638c567ca6103d91874f2fa6e7a6e5a1dca583713ce358a3384b84a67c6c5c40a4994c7c6deaf8cf3a8c6f907175aeed7cebe4960a5dfcc1e8e7ac2019dd4e14c6f74f527e865a3e505726de28d78f6bb53979b370ca766933f464682d663490a089fe33bde0d90cf5bb66d371b31ce3fe10c77b1079fe64dab973fa1047d47ca8382c8dc658a624f0d16b7f7cf9f101260bc63edda6d15d4c1250aaa9c6db7d107112c440015d0d4c1d032718430b3897da9b077437bb035b477e6019f464cdaf8b9584dc1752bafb601c54800e870231644b0c0d07679d96acec7be7718dde728ec45ceec089d4f7f8fd"
+      }
+    },
+    "delegate": {
+      "kid": "5nhSiiM-sKQZU6X-FhgwRIT6VvcQPN2l69TtNehmlYg",
+      "public": {
+        "kty": "RSA",
+        "n": "iGQ1xl1MO6z4RgTUZrvMSKsuTuJpcmEETVfj7n2LS7IzQoNB8BpMXaT1zIRcAoSM0lyfYf6UceHy8VWDZ7zdcfdlNZcvxG0_eFekIi4wZcRBUl_z7zACGENGVbEO2_SV1haJ3tj4yIKsZZMtBaCxBveAxoIR478zJXF4HuBnpiUc79MqCRgjgF_ljmtDFxxfw6O1Q6A64AcGP2usVeZ2EwA5hjMfaEjfibzMvCkQx7SDCfAxUTVjTuZwjKvJXG4HWaeqB0oNoGeVW8ge5Ci6_IU1cID2BPmzD7cu099UtRZvuLAwRy0YI7MqTVZyNQVc-Nxp74TQRbruE-1uL6TNQQ",
+        "e": "AQAB"
+      },
+      "montgomery": {
+        "n0inv": 15679,
+        "r2_hex": "56b0b22c8245d702655884b782ce3b3e1df6e493fa6fe28f4523a397dd36e12c76adeba7a575f0d298778be4e2c7c838bbef122d8c2398f891a164835ef806947289112c106521a13ed9a1c1e97d8b2f4d54fe36fc87b258e42b63d380d7d5366279d45cbc22dcf8a12fe98ec5a778eeb349f1b5cf27360d8930ecb2b702b4e059baea3a6cdf0de10ce2142984ddeca370ac9188daeb63a41e297f32c88276ee133a8c983abdf25b118c8991bac2753f3c587cf0628e86727f85c74c89987cfc67a4f452d9cda56a6e55f06b82cb992549bae91598d6c18acaa52be8715554264d215b0d0dfbf911b46f23f73a03182cf70fc0927673976edf605269e016fe51"
+      }
+    },
+    "rogue": {
+      "kid": "Hk7HOhWAxWWwhopkPeqeP-6rnDAbTtBZ2qbEjeFFR38",
+      "public": {
+        "kty": "RSA",
+        "n": "ysYdHeZ55ET_xG0WfenUzDoLNAgrIqQ-B_XJTSbzNIJLSoDf5L-Dc9n7_cjNNmcdFiZOQSeJNqD_zb5y4zlblwjr1DK5kCeA1Z-St7GsHxjqMsv0mcyLSDamLiT7VMymnT4Z68Projf5W9r5HS6cALRwgNtsFd99W7_9rp9qUQ8qfXfVm5MS8Vbx-FpY7mreldrWSpW__Id9un5YNG9cwT3L3G71EupPZktGOBXS7kpgJauGaW1rZRrgimpePvrhrMvBDnjvHPHEzyNe9zQMhgiOy8ffKUJD9LMcZ6KnObV48QKPOj5BQnSoM-2v0iGHNMVoQKU04rwawv5ZvXU-oQ",
+        "e": "AQAB"
+      },
+      "montgomery": {
+        "n0inv": 55967,
+        "r2_hex": "68c11f8986d96e9d4bbefb36c9a25cd3af0bb6e4948bb2b3e9c6df7f119456738ee83569100ce04a4e2fbaf092c5c8e87baf48f08d4800a112f2a0adbd495e470b327226d04165a1e93e272fdf000b5584fe638c04185081a92df65de7670b51ede61f1671b493ccbbc68b605c9020abd7ab9f3cdf616b21c385e10cc8c4f51e2d1ceb4b833df1680f83cdf8c333907878bd8c2e4a56dbda951fc340c504a924eae9253227dd85fcc557b05763eddaa48fddab475571ec2ba8cfdee047f6a48e11bfd0938949e2a568317822a784e537b490910778db0636e40d58f3daf04a2dd0ca3ed5e9f4e16e03ff80115b155b04c82e2b5d0e03296b3efecf0db61aa8f6"
+      }
+    }
+  },
+  "vendor_certificate": {
+    "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0\",\"signature\":\"hXR_YdDDg_j1ohgVo2Trz1910X910Y32U1WdBm2stcTKAxXNW0mdpPs7znuoqYu4yp598XEHZ5tSLF8w_lY5NBriMeT1gjRcT1vlvmWxUGOAMAp9HIQoO30oNFuuGjTuPFbb2879fe3HfI4-cKuNVHoxfVNhZUKtKSmIz6LzEUkLH-J7sqKwlwpgCaMQ6EP1n1yafEESnH89qyg3N9sD6ZdZUmu_HGvsKSeyVmjwv1Ss0pTyEq-tw5K3ZKVKbk4mWpOcfe5H5FpqpJxf1JfO-7yOE5ivtgfnOQipYIbEhio4vOl-Izuc_pP3ebcKUw47vJkpJZfJkEwzQJyEIJVTpQ\"}",
+    "payload_b64url": "eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0",
+    "payload_sha256_hex": "8bb734fe4037709e893bac380e15747edb13cfb9f906a43b576ac44a44fd4c9e",
+    "signature_b64url": "hXR_YdDDg_j1ohgVo2Trz1910X910Y32U1WdBm2stcTKAxXNW0mdpPs7znuoqYu4yp598XEHZ5tSLF8w_lY5NBriMeT1gjRcT1vlvmWxUGOAMAp9HIQoO30oNFuuGjTuPFbb2879fe3HfI4-cKuNVHoxfVNhZUKtKSmIz6LzEUkLH-J7sqKwlwpgCaMQ6EP1n1yafEESnH89qyg3N9sD6ZdZUmu_HGvsKSeyVmjwv1Ss0pTyEq-tw5K3ZKVKbk4mWpOcfe5H5FpqpJxf1JfO-7yOE5ivtgfnOQipYIbEhio4vOl-Izuc_pP3ebcKUw47vJkpJZfJkEwzQJyEIJVTpQ",
+    "license_id": "VND-TEST-0001",
+    "expires_at": "2027-10-01T00:00:00Z"
+  },
+  "machine_license": {
+    "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"machine-license\",\"alg\":\"RS256\",\"kid\":\"5nhSiiM-sKQZU6X-FhgwRIT6VvcQPN2l69TtNehmlYg\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoibWFjaGluZS1saWNlbnNlIiwibGljZW5zZV9pZCI6Ik1DSC1URVNULTAwMDEiLCJjb250cm9sX2xpY2Vuc2VfaWQiOiJWTkQtVEVTVC0wMDAxIiwicHJvamVjdF9pZCI6InByb2otYWxwaGEiLCJkZXZpY2VfaWQiOiJERVYtVEVTVC0wMDAxIiwiaXNzdWVkX2F0IjoiMjAyNi0xMC0yMlQwMDowMDowMFoiLCJleHBpcmVzX2F0IjoiMjAyNy0wMS0yMFQwMDowMDowMFoiLCJzdGF0dXMiOiJhY3RpdmUiLCJmZWF0dXJlcyI6WyJkZXZpY2UubG9jayJdfQ\",\"signature\":\"YZ4eZIuQXM5yKTXqzb1ys6Rc47BQ20XzxNtrg8CcGZljBAKzlCd6FJE1bib34Njhcs8gYyvMcI3Uk8js0m9OK_UfNcnD88rLDtsMsmIxhpL-UvDAI_eMslyzjhGvbsZaTQI5G-UVIZTNuX1DGjRHZA4qCxFm_dRr_uVdEkFULMRtgWBHKQzdGVJrDzhL83ZpdN57RyATzawIArwJRKQRTF6L00ddEnS3bO-xKSfdqY-vuGI9g80smce7wCN2EcSwjcpGltr0hx5_Deu7wO_lZ4eSQDVAL5sorr5r5TF64n8IC1bjN15CezP-knCTjCDFH78_vwl9QG3kdK5dNxJ6XQ\"}",
+    "payload_b64url": "eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoibWFjaGluZS1saWNlbnNlIiwibGljZW5zZV9pZCI6Ik1DSC1URVNULTAwMDEiLCJjb250cm9sX2xpY2Vuc2VfaWQiOiJWTkQtVEVTVC0wMDAxIiwicHJvamVjdF9pZCI6InByb2otYWxwaGEiLCJkZXZpY2VfaWQiOiJERVYtVEVTVC0wMDAxIiwiaXNzdWVkX2F0IjoiMjAyNi0xMC0yMlQwMDowMDowMFoiLCJleHBpcmVzX2F0IjoiMjAyNy0wMS0yMFQwMDowMDowMFoiLCJzdGF0dXMiOiJhY3RpdmUiLCJmZWF0dXJlcyI6WyJkZXZpY2UubG9jayJdfQ",
+    "payload_sha256_hex": "5f37a29b2a3c638b97efb58881d07c8e16ff3ae4ea4be6a9ffdab2679e037a4a",
+    "signature_b64url": "YZ4eZIuQXM5yKTXqzb1ys6Rc47BQ20XzxNtrg8CcGZljBAKzlCd6FJE1bib34Njhcs8gYyvMcI3Uk8js0m9OK_UfNcnD88rLDtsMsmIxhpL-UvDAI_eMslyzjhGvbsZaTQI5G-UVIZTNuX1DGjRHZA4qCxFm_dRr_uVdEkFULMRtgWBHKQzdGVJrDzhL83ZpdN57RyATzawIArwJRKQRTF6L00ddEnS3bO-xKSfdqY-vuGI9g80smce7wCN2EcSwjcpGltr0hx5_Deu7wO_lZ4eSQDVAL5sorr5r5TF64n8IC1bjN15CezP-knCTjCDFH78_vwl9QG3kdK5dNxJ6XQ",
+    "license_id": "MCH-TEST-0001",
+    "expires_at": "2027-01-20T00:00:00Z"
+  },
+  "cases": [
+    {
+      "id": "vendor-valid",
+      "note": "厂商签名合法，用厂商公钥验签",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0\",\"signature\":\"hXR_YdDDg_j1ohgVo2Trz1910X910Y32U1WdBm2stcTKAxXNW0mdpPs7znuoqYu4yp598XEHZ5tSLF8w_lY5NBriMeT1gjRcT1vlvmWxUGOAMAp9HIQoO30oNFuuGjTuPFbb2879fe3HfI4-cKuNVHoxfVNhZUKtKSmIz6LzEUkLH-J7sqKwlwpgCaMQ6EP1n1yafEESnH89qyg3N9sD6ZdZUmu_HGvsKSeyVmjwv1Ss0pTyEq-tw5K3ZKVKbk4mWpOcfe5H5FpqpJxf1JfO-7yOE5ivtgfnOQipYIbEhio4vOl-Izuc_pP3ebcKUw47vJkpJZfJkEwzQJyEIJVTpQ\"}",
+      "expect": "ok"
+    },
+    {
+      "id": "machine-valid",
+      "note": "委托密钥签名合法，用委托公钥验签",
+      "license_type": "machine-license",
+      "key": "delegate",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"machine-license\",\"alg\":\"RS256\",\"kid\":\"5nhSiiM-sKQZU6X-FhgwRIT6VvcQPN2l69TtNehmlYg\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoibWFjaGluZS1saWNlbnNlIiwibGljZW5zZV9pZCI6Ik1DSC1URVNULTAwMDEiLCJjb250cm9sX2xpY2Vuc2VfaWQiOiJWTkQtVEVTVC0wMDAxIiwicHJvamVjdF9pZCI6InByb2otYWxwaGEiLCJkZXZpY2VfaWQiOiJERVYtVEVTVC0wMDAxIiwiaXNzdWVkX2F0IjoiMjAyNi0xMC0yMlQwMDowMDowMFoiLCJleHBpcmVzX2F0IjoiMjAyNy0wMS0yMFQwMDowMDowMFoiLCJzdGF0dXMiOiJhY3RpdmUiLCJmZWF0dXJlcyI6WyJkZXZpY2UubG9jayJdfQ\",\"signature\":\"YZ4eZIuQXM5yKTXqzb1ys6Rc47BQ20XzxNtrg8CcGZljBAKzlCd6FJE1bib34Njhcs8gYyvMcI3Uk8js0m9OK_UfNcnD88rLDtsMsmIxhpL-UvDAI_eMslyzjhGvbsZaTQI5G-UVIZTNuX1DGjRHZA4qCxFm_dRr_uVdEkFULMRtgWBHKQzdGVJrDzhL83ZpdN57RyATzawIArwJRKQRTF6L00ddEnS3bO-xKSfdqY-vuGI9g80smce7wCN2EcSwjcpGltr0hx5_Deu7wO_lZ4eSQDVAL5sorr5r5TF64n8IC1bjN15CezP-knCTjCDFH78_vwl9QG3kdK5dNxJ6XQ\"}",
+      "expect": "ok"
+    },
+    {
+      "id": "vendor-payload-byte-flip",
+      "note": "payload 被改 1 位",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eiJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0\",\"signature\":\"hXR_YdDDg_j1ohgVo2Trz1910X910Y32U1WdBm2stcTKAxXNW0mdpPs7znuoqYu4yp598XEHZ5tSLF8w_lY5NBriMeT1gjRcT1vlvmWxUGOAMAp9HIQoO30oNFuuGjTuPFbb2879fe3HfI4-cKuNVHoxfVNhZUKtKSmIz6LzEUkLH-J7sqKwlwpgCaMQ6EP1n1yafEESnH89qyg3N9sD6ZdZUmu_HGvsKSeyVmjwv1Ss0pTyEq-tw5K3ZKVKbk4mWpOcfe5H5FpqpJxf1JfO-7yOE5ivtgfnOQipYIbEhio4vOl-Izuc_pP3ebcKUw47vJkpJZfJkEwzQJyEIJVTpQ\"}",
+      "expect": "signature_invalid"
+    },
+    {
+      "id": "vendor-signature-byte-flip",
+      "note": "签名被改 1 位",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0\",\"signature\":\"hHR_YdDDg_j1ohgVo2Trz1910X910Y32U1WdBm2stcTKAxXNW0mdpPs7znuoqYu4yp598XEHZ5tSLF8w_lY5NBriMeT1gjRcT1vlvmWxUGOAMAp9HIQoO30oNFuuGjTuPFbb2879fe3HfI4-cKuNVHoxfVNhZUKtKSmIz6LzEUkLH-J7sqKwlwpgCaMQ6EP1n1yafEESnH89qyg3N9sD6ZdZUmu_HGvsKSeyVmjwv1Ss0pTyEq-tw5K3ZKVKbk4mWpOcfe5H5FpqpJxf1JfO-7yOE5ivtgfnOQipYIbEhio4vOl-Izuc_pP3ebcKUw47vJkpJZfJkEwzQJyEIJVTpQ\"}",
+      "expect": "signature_invalid"
+    },
+    {
+      "id": "vendor-wrong-key",
+      "note": "用另一把公钥验签",
+      "license_type": "vendor-control",
+      "key": "rogue",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0\",\"signature\":\"hXR_YdDDg_j1ohgVo2Trz1910X910Y32U1WdBm2stcTKAxXNW0mdpPs7znuoqYu4yp598XEHZ5tSLF8w_lY5NBriMeT1gjRcT1vlvmWxUGOAMAp9HIQoO30oNFuuGjTuPFbb2879fe3HfI4-cKuNVHoxfVNhZUKtKSmIz6LzEUkLH-J7sqKwlwpgCaMQ6EP1n1yafEESnH89qyg3N9sD6ZdZUmu_HGvsKSeyVmjwv1Ss0pTyEq-tw5K3ZKVKbk4mWpOcfe5H5FpqpJxf1JfO-7yOE5ivtgfnOQipYIbEhio4vOl-Izuc_pP3ebcKUw47vJkpJZfJkEwzQJyEIJVTpQ\"}",
+      "expect": "signature_invalid"
+    },
+    {
+      "id": "vendor-signed-by-delegate-key",
+      "note": "厂商证书内容被委托私钥签名",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"5nhSiiM-sKQZU6X-FhgwRIT6VvcQPN2l69TtNehmlYg\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0\",\"signature\":\"L6ajfkLigsYkpeOqNNEbx3qp6SUTu5J7ZnpWdXZPpimGxfDXlS83KpOEdzx1U_VpdDJne3bI4gp0SGxjKzEnOLfRdtttckkZZ7EM0My_aoLPX0pA7uV6r5AO6Mf3_q10CJd2Xq0vXKONSh6IS_8WhIj4XYxDgkcRCCmdiR5M0Ep3euZZMRTdtPUfwRaboDKKI0ebwCwgivMAjMA0r1UV3gRV2phxK6CVi3B4VimD89ESd5blpOchjmrW_ceJVOokNrLcpPQEbCFbqCOTclrOoq6kuFOlkaXgMifHfZE9q-O8ek9fU2Xt0CftM2Pt-kigzEz8tzDHSPTTX88GxNkvww\"}",
+      "expect": "signature_invalid"
+    },
+    {
+      "id": "vendor-signature-truncated",
+      "note": "签名被截断 1 字节",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0\",\"signature\":\"hXR_YdDDg_j1ohgVo2Trz1910X910Y32U1WdBm2stcTKAxXNW0mdpPs7znuoqYu4yp598XEHZ5tSLF8w_lY5NBriMeT1gjRcT1vlvmWxUGOAMAp9HIQoO30oNFuuGjTuPFbb2879fe3HfI4-cKuNVHoxfVNhZUKtKSmIz6LzEUkLH-J7sqKwlwpgCaMQ6EP1n1yafEESnH89qyg3N9sD6ZdZUmu_HGvsKSeyVmjwv1Ss0pTyEq-tw5K3ZKVKbk4mWpOcfe5H5FpqpJxf1JfO-7yOE5ivtgfnOQipYIbEhio4vOl-Izuc_pP3ebcKUw47vJkpJZfJkEwzQJyEIJVT\"}",
+      "expect": "signature_length"
+    },
+    {
+      "id": "vendor-signature-out-of-range",
+      "note": "签名数值等于模数 n",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0\",\"signature\":\"lqzyZQ7V_-BwqK3SrXxUiEcbZHMeEm1WaJp_cBpcPQFfCGbniUOtOoZzASdFw3cn76Dg5F46KtnqPq-Sku1u2B-j02_nVuA7vKpyTa2an9hvvnR9mYLv8r8HpENBPZZIfytKF7TDrCewwa9oMKiIegtKp4cbvGcDBN7DFp0Hm3gaNWVeTqCD43rgR1Sazc9tEpi-KihuoL0XTgSebEFdbTOhqtxKAL5QEiZTHxWl9PLW6IF8SfLnDC9VlUiMOr9eVCCWCXYZiRsVGIg-Pdcbk7H5zUWg9GLuVm5Dvww2w7xKbvJs0AwAIhcfuG4OBb7dAcyPnS2w2DgTbNfe5omVGw\"}",
+      "expect": "signature_out_of_range"
+    },
+    {
+      "id": "vendor-payload-with-padding",
+      "note": "payload 带 = 填充",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0=\",\"signature\":\"hXR_YdDDg_j1ohgVo2Trz1910X910Y32U1WdBm2stcTKAxXNW0mdpPs7znuoqYu4yp598XEHZ5tSLF8w_lY5NBriMeT1gjRcT1vlvmWxUGOAMAp9HIQoO30oNFuuGjTuPFbb2879fe3HfI4-cKuNVHoxfVNhZUKtKSmIz6LzEUkLH-J7sqKwlwpgCaMQ6EP1n1yafEESnH89qyg3N9sD6ZdZUmu_HGvsKSeyVmjwv1Ss0pTyEq-tw5K3ZKVKbk4mWpOcfe5H5FpqpJxf1JfO-7yOE5ivtgfnOQipYIbEhio4vOl-Izuc_pP3ebcKUw47vJkpJZfJkEwzQJyEIJVTpQ\"}",
+      "expect": "base64url_invalid"
+    },
+    {
+      "id": "vendor-payload-with-plus",
+      "note": "payload 含标准 Base64 字符 +",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0+\",\"signature\":\"hXR_YdDDg_j1ohgVo2Trz1910X910Y32U1WdBm2stcTKAxXNW0mdpPs7znuoqYu4yp598XEHZ5tSLF8w_lY5NBriMeT1gjRcT1vlvmWxUGOAMAp9HIQoO30oNFuuGjTuPFbb2879fe3HfI4-cKuNVHoxfVNhZUKtKSmIz6LzEUkLH-J7sqKwlwpgCaMQ6EP1n1yafEESnH89qyg3N9sD6ZdZUmu_HGvsKSeyVmjwv1Ss0pTyEq-tw5K3ZKVKbk4mWpOcfe5H5FpqpJxf1JfO-7yOE5ivtgfnOQipYIbEhio4vOl-Izuc_pP3ebcKUw47vJkpJZfJkEwzQJyEIJVTpQ\"}",
+      "expect": "base64url_invalid"
+    },
+    {
+      "id": "vendor-envelope-trailing-garbage",
+      "note": "信封尾部多一个字符",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0\",\"signature\":\"hXR_YdDDg_j1ohgVo2Trz1910X910Y32U1WdBm2stcTKAxXNW0mdpPs7znuoqYu4yp598XEHZ5tSLF8w_lY5NBriMeT1gjRcT1vlvmWxUGOAMAp9HIQoO30oNFuuGjTuPFbb2879fe3HfI4-cKuNVHoxfVNhZUKtKSmIz6LzEUkLH-J7sqKwlwpgCaMQ6EP1n1yafEESnH89qyg3N9sD6ZdZUmu_HGvsKSeyVmjwv1Ss0pTyEq-tw5K3ZKVKbk4mWpOcfe5H5FpqpJxf1JfO-7yOE5ivtgfnOQipYIbEhio4vOl-Izuc_pP3ebcKUw47vJkpJZfJkEwzQJyEIJVTpQ\"}x",
+      "expect": "envelope_malformed"
+    },
+    {
+      "id": "vendor-unsupported-version",
+      "note": "schema_version = 2（签名合法）",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MiwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifX0\",\"signature\":\"iXPGJzyM3EIRls30dntwdetDIlTqhZ_cVqgCfjYR8LcLdjV3LXi_P98OiQsFwcBWzXC_XclqozSP5e8ZAExbQmXlteDtce5vQe93SRWi1e-aMarE2NuF_krNRS73gxtYUfqCBYeUJXktJkTg0MFXsTH6eDbXm1MhiBQmid092XHtazmxkanXqT0t3p_7X4yTrF_qkD4D2SDVqdHEwIAGHcQgEBSwWxrt7Q1OoVxhoGkZpMzz3X0ohid9CxHZ_9tZmCFzQS06znYbI8vNKyy1fWOslcee6jpLDkJ2cvKiDI_qkcF8uT7QScuj4GiJqwQV5x6Csrw465bMuP6NFXQReA\"}",
+      "expect": "unsupported_version"
+    },
+    {
+      "id": "vendor-payload-extra-field",
+      "note": "payload 多一个未知字段（签名合法）",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoidmVuZG9yLWNvbnRyb2wiLCJsaWNlbnNlX2lkIjoiVk5ELVRFU1QtMDAwMSIsImlzc3VlZF9hdCI6IjIwMjYtMTAtMDFUMDA6MDA6MDBaIiwiZXhwaXJlc19hdCI6IjIwMjctMTAtMDFUMDA6MDA6MDBaIiwicHJvamVjdF9pZHMiOlsicHJvai1hbHBoYSIsInByb2otYmV0YSJdLCJtYXhfZGV2aWNlcyI6NTAsImZlYXR1cmVzIjpbImRldmljZS5sb2NrIiwibGljZW5zZS5pc3N1ZSJdLCJkZWxlZ2F0ZWRfcHVibGljX2tleSI6eyJrdHkiOiJSU0EiLCJuIjoiaUdRMXhsMU1PNno0UmdUVVpydk1TS3N1VHVKcGNtRUVUVmZqN24yTFM3SXpRb05COEJwTVhhVDF6SVJjQW9TTTBseWZZZjZVY2VIeThWV0RaN3pkY2ZkbE5aY3Z4RzBfZUZla0lpNHdaY1JCVWxfejd6QUNHRU5HVmJFTzJfU1YxaGFKM3RqNHlJS3NaWk10QmFDeEJ2ZUF4b0lSNDc4ekpYRjRIdUJucGlVYzc5TXFDUmdqZ0ZfbGptdERGeHhmdzZPMVE2QTY0QWNHUDJ1c1ZlWjJFd0E1aGpNZmFFamZpYnpNdkNrUXg3U0RDZkF4VVRWalR1WndqS3ZKWEc0SFdhZXFCMG9Ob0dlVlc4Z2U1Q2k2X0lVMWNJRDJCUG16RDdjdTA5OVV0Ulp2dUxBd1J5MFlJN01xVFZaeU5RVmMtTnhwNzRUUVJicnVFLTF1TDZUTlFRIiwiZSI6IkFRQUIifSwiaW5qZWN0ZWQiOiJ4In0\",\"signature\":\"efIMY9V7YdMIJ31jflV_MWr9b4uDGUGuyGHsjhyeQnNx9k7rDVS9Rk1r00t6vk4nVzOGhG2zfmwPQ2og7ieY0H8VbbKJtiVdOiL5KLIY0NgCsj9ix2C11Lwfhp3OfHuFpi0PbvWpybUmfa2OjHZ2duSpfEHiMXz8QPrhyMyxqmQL4MDtJdf7YnKgx39m98arQgrlRJ3rMOLdugFNFgVue6G4vBegPOK9ohxDyu_yH8IrzNH5LZZfN8f7Ml9KQ18gFrYwRiY5_09R4FY-wY-KRC4_BodPTpXCeIhEnQEhIQOUB-NR5RXSia45CmfbWYXKb_o5puB6QP9VT5jcRrnb4Q\"}",
+      "expect": "payload_invalid"
+    },
+    {
+      "id": "vendor-payload-not-json",
+      "note": "payload 不是合法 JSON（签名合法）",
+      "license_type": "vendor-control",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"vendor-control\",\"alg\":\"RS256\",\"kid\":\"4HvYDU4SXQw5qeXp9h4Rb1CPy8zCEnNbh6jLZ0FDo-U\",\"payload\":\"eyJicm9rZW4iOg\",\"signature\":\"SOm5eJ2tdKCSfWL4ECeO5GQJ-JcpNXtBlwYV-OVJK1pFzmsdYGhRC9yuwXeigMSEV5oKE54BI73HmrMqTv3mCzgT_E40geWFySNc-RcMeGMBUok4fIaMQTxyiKvwdoJvLKwiXo9ISFUNJmUwx1hozBP_wXoSecIg7zRkN5Wv2Kj_4Yoe2SIiIw8iNqreUqKZNVmJVRoGksFeMo8UAoKy-aw7MqRwwQINsZAAsAbOMCANzt7FdoPLpVxHUBi4RVMs99ydoX9de-_1Rtr11BPQ0nsn3wEi9eIXi9ZgTBC7PgCYSqT893SMChbuJg1WInTYx-IYDIfH5aR73CSIwKKbhg\"}",
+      "expect": "payload_malformed"
+    },
+    {
+      "id": "vendor-type-mismatch",
+      "note": "把子机授权当作中控证书验签",
+      "license_type": "vendor-control",
+      "key": "delegate",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"machine-license\",\"alg\":\"RS256\",\"kid\":\"5nhSiiM-sKQZU6X-FhgwRIT6VvcQPN2l69TtNehmlYg\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoibWFjaGluZS1saWNlbnNlIiwibGljZW5zZV9pZCI6Ik1DSC1URVNULTAwMDEiLCJjb250cm9sX2xpY2Vuc2VfaWQiOiJWTkQtVEVTVC0wMDAxIiwicHJvamVjdF9pZCI6InByb2otYWxwaGEiLCJkZXZpY2VfaWQiOiJERVYtVEVTVC0wMDAxIiwiaXNzdWVkX2F0IjoiMjAyNi0xMC0yMlQwMDowMDowMFoiLCJleHBpcmVzX2F0IjoiMjAyNy0wMS0yMFQwMDowMDowMFoiLCJzdGF0dXMiOiJhY3RpdmUiLCJmZWF0dXJlcyI6WyJkZXZpY2UubG9jayJdfQ\",\"signature\":\"YZ4eZIuQXM5yKTXqzb1ys6Rc47BQ20XzxNtrg8CcGZljBAKzlCd6FJE1bib34Njhcs8gYyvMcI3Uk8js0m9OK_UfNcnD88rLDtsMsmIxhpL-UvDAI_eMslyzjhGvbsZaTQI5G-UVIZTNuX1DGjRHZA4qCxFm_dRr_uVdEkFULMRtgWBHKQzdGVJrDzhL83ZpdN57RyATzawIArwJRKQRTF6L00ddEnS3bO-xKSfdqY-vuGI9g80smce7wCN2EcSwjcpGltr0hx5_Deu7wO_lZ4eSQDVAL5sorr5r5TF64n8IC1bjN15CezP-knCTjCDFH78_vwl9QG3kdK5dNxJ6XQ\"}",
+      "expect": "type_mismatch"
+    },
+    {
+      "id": "machine-payload-byte-flip",
+      "note": "子机授权 payload 被改 1 位",
+      "license_type": "machine-license",
+      "key": "delegate",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"machine-license\",\"alg\":\"RS256\",\"kid\":\"5nhSiiM-sKQZU6X-FhgwRIT6VvcQPN2l69TtNehmlYg\",\"payload\":\"eiJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoibWFjaGluZS1saWNlbnNlIiwibGljZW5zZV9pZCI6Ik1DSC1URVNULTAwMDEiLCJjb250cm9sX2xpY2Vuc2VfaWQiOiJWTkQtVEVTVC0wMDAxIiwicHJvamVjdF9pZCI6InByb2otYWxwaGEiLCJkZXZpY2VfaWQiOiJERVYtVEVTVC0wMDAxIiwiaXNzdWVkX2F0IjoiMjAyNi0xMC0yMlQwMDowMDowMFoiLCJleHBpcmVzX2F0IjoiMjAyNy0wMS0yMFQwMDowMDowMFoiLCJzdGF0dXMiOiJhY3RpdmUiLCJmZWF0dXJlcyI6WyJkZXZpY2UubG9jayJdfQ\",\"signature\":\"YZ4eZIuQXM5yKTXqzb1ys6Rc47BQ20XzxNtrg8CcGZljBAKzlCd6FJE1bib34Njhcs8gYyvMcI3Uk8js0m9OK_UfNcnD88rLDtsMsmIxhpL-UvDAI_eMslyzjhGvbsZaTQI5G-UVIZTNuX1DGjRHZA4qCxFm_dRr_uVdEkFULMRtgWBHKQzdGVJrDzhL83ZpdN57RyATzawIArwJRKQRTF6L00ddEnS3bO-xKSfdqY-vuGI9g80smce7wCN2EcSwjcpGltr0hx5_Deu7wO_lZ4eSQDVAL5sorr5r5TF64n8IC1bjN15CezP-knCTjCDFH78_vwl9QG3kdK5dNxJ6XQ\"}",
+      "expect": "signature_invalid"
+    },
+    {
+      "id": "machine-wrong-key",
+      "note": "用厂商公钥验子机授权",
+      "license_type": "machine-license",
+      "key": "vendor",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"machine-license\",\"alg\":\"RS256\",\"kid\":\"5nhSiiM-sKQZU6X-FhgwRIT6VvcQPN2l69TtNehmlYg\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoibWFjaGluZS1saWNlbnNlIiwibGljZW5zZV9pZCI6Ik1DSC1URVNULTAwMDEiLCJjb250cm9sX2xpY2Vuc2VfaWQiOiJWTkQtVEVTVC0wMDAxIiwicHJvamVjdF9pZCI6InByb2otYWxwaGEiLCJkZXZpY2VfaWQiOiJERVYtVEVTVC0wMDAxIiwiaXNzdWVkX2F0IjoiMjAyNi0xMC0yMlQwMDowMDowMFoiLCJleHBpcmVzX2F0IjoiMjAyNy0wMS0yMFQwMDowMDowMFoiLCJzdGF0dXMiOiJhY3RpdmUiLCJmZWF0dXJlcyI6WyJkZXZpY2UubG9jayJdfQ\",\"signature\":\"YZ4eZIuQXM5yKTXqzb1ys6Rc47BQ20XzxNtrg8CcGZljBAKzlCd6FJE1bib34Njhcs8gYyvMcI3Uk8js0m9OK_UfNcnD88rLDtsMsmIxhpL-UvDAI_eMslyzjhGvbsZaTQI5G-UVIZTNuX1DGjRHZA4qCxFm_dRr_uVdEkFULMRtgWBHKQzdGVJrDzhL83ZpdN57RyATzawIArwJRKQRTF6L00ddEnS3bO-xKSfdqY-vuGI9g80smce7wCN2EcSwjcpGltr0hx5_Deu7wO_lZ4eSQDVAL5sorr5r5TF64n8IC1bjN15CezP-knCTjCDFH78_vwl9QG3kdK5dNxJ6XQ\"}",
+      "expect": "signature_invalid"
+    },
+    {
+      "id": "machine-signature-byte-flip",
+      "note": "子机授权签名被改 1 位",
+      "license_type": "machine-license",
+      "key": "delegate",
+      "envelope": "{\"aegis\":\"license-envelope\",\"schema_version\":1,\"license_type\":\"machine-license\",\"alg\":\"RS256\",\"kid\":\"5nhSiiM-sKQZU6X-FhgwRIT6VvcQPN2l69TtNehmlYg\",\"payload\":\"eyJzY2hlbWFfdmVyc2lvbiI6MSwibGljZW5zZV90eXBlIjoibWFjaGluZS1saWNlbnNlIiwibGljZW5zZV9pZCI6Ik1DSC1URVNULTAwMDEiLCJjb250cm9sX2xpY2Vuc2VfaWQiOiJWTkQtVEVTVC0wMDAxIiwicHJvamVjdF9pZCI6InByb2otYWxwaGEiLCJkZXZpY2VfaWQiOiJERVYtVEVTVC0wMDAxIiwiaXNzdWVkX2F0IjoiMjAyNi0xMC0yMlQwMDowMDowMFoiLCJleHBpcmVzX2F0IjoiMjAyNy0wMS0yMFQwMDowMDowMFoiLCJzdGF0dXMiOiJhY3RpdmUiLCJmZWF0dXJlcyI6WyJkZXZpY2UubG9jayJdfQ\",\"signature\":\"YJ4eZIuQXM5yKTXqzb1ys6Rc47BQ20XzxNtrg8CcGZljBAKzlCd6FJE1bib34Njhcs8gYyvMcI3Uk8js0m9OK_UfNcnD88rLDtsMsmIxhpL-UvDAI_eMslyzjhGvbsZaTQI5G-UVIZTNuX1DGjRHZA4qCxFm_dRr_uVdEkFULMRtgWBHKQzdGVJrDzhL83ZpdN57RyATzawIArwJRKQRTF6L00ddEnS3bO-xKSfdqY-vuGI9g80smce7wCN2EcSwjcpGltr0hx5_Deu7wO_lZ4eSQDVAL5sorr5r5TF64n8IC1bjN15CezP-knCTjCDFH78_vwl9QG3kdK5dNxJ6XQ\"}",
+      "expect": "signature_invalid"
+    }
+  ]
+}

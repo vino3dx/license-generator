@@ -1,0 +1,12 @@
+node_modules/
+out/
+release/
+dist/
+coverage/
+*.log
+.DS_Store
+
+# Godot 验证工程的生成物
+verifier-godot/.godot/
+verifier-godot/vectors.json
+verifier-godot/build/

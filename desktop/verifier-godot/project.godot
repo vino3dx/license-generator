@@ -1,0 +1,12 @@
+; Aegis 子机验签器的独立测试工程（仅用于 headless 交叉验证，不参与桌面应用打包）
+config_version=5
+
+[application]
+
+config/name="Aegis Verifier Vectors"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.6")
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
