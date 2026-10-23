@@ -68,6 +68,7 @@ export const AUDIT_ACTION_LABEL: Record<string, string> = {
   device_lock: '锁定设备',
   device_unlock: '解锁设备',
   control_certificate_import: '导入中控证书',
+  control_certificate_consume: '证书作废（一次性）',
   delegated_key_import: '导入委托私钥',
   license_issue: '签发授权',
   license_batch_issue: '批量签发',

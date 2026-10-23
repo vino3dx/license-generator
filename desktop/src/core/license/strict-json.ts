@@ -20,11 +20,13 @@ export function parseStrictJson(text: string, code: LicenseErrorCode): unknown {
 
 class StrictJsonParser {
   private index = 0
+  private readonly text: string
+  private readonly code: LicenseErrorCode
 
-  constructor(
-    private readonly text: string,
-    private readonly code: LicenseErrorCode
-  ) {}
+  constructor(text: string, code: LicenseErrorCode) {
+    this.text = text
+    this.code = code
+  }
 
   parseDocument(): unknown {
     this.skipWhitespace()

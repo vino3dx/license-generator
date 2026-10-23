@@ -24,10 +24,10 @@ func _ready() -> void:
 	add_child(title)
 	add_child(HSeparator.new())
 	_add_copy_row("项目 ID", License.project_code())
-	_add_copy_row("设备 ID", Device.device_id())
+	_add_copy_row("设备 ID", Device.device_id(License.project_code()))
 	_add_copy_row("密钥指纹", License.secret_fingerprint())
 	var tip := Label.new()
-	tip.text = "中控签发时必须使用上面的项目 ID 与设备 ID；设备 ID 由本机唯一标识派生，重装系统或更换主板后会变化。"
+	tip.text = "中控签发时必须使用上面的项目 ID 与设备 ID（设备 ID 已用项目 ID 加盐，同一台机器不同工程得到不同 ID）；设备 ID 由本机唯一标识派生，重装系统或更换主板后会变化。"
 	tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	tip.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
 	add_child(tip)
@@ -109,10 +109,17 @@ func _refresh_switch() -> void:
 func _refresh_license() -> void:
 	var r: Dictionary = License.evaluate(false)
 	var license_file := License.license_path()
-	var control_file := License.control_path()
+	var legacy_line := ""
+	if FileAccess.file_exists(License.legacy_control_path()):
+		legacy_line = "\n⚠ 检测到旧版 control.cert：新流程只读 license.dat 容器，请向中控重新获取授权文件"
 	if r.valid:
+		var renew_line := (
+			"续期: 已进入 %d 天临期窗口" % License.RENEW_WINDOW
+			if License.is_renewal_due(r)
+			else "续期: 暂不需要"
+		)
 		_detail.text = (
-			"[color=#4CE24C]✔ 授权有效[/color]\n项目: %s\n设备: %s\n授权 ID: %s\n中控证书: %s\n签发: %s\n到期: %s\n剩余天数: %d 天\nlicense: %s\ncontrol: %s"
+			"[color=#4CE24C]✔ 授权有效[/color]\n项目: %s\n设备: %s\n授权 ID: %s\n中控证书: %s\n签发: %s\n到期: %s\n剩余天数: %d 天\n%s\nlicense: %s%s"
 			% [
 				r.project,
 				r.device,
@@ -121,14 +128,15 @@ func _refresh_license() -> void:
 				r.issue,
 				r.expire,
 				r.days_left,
+				renew_line,
 				license_file,
-				control_file
+				legacy_line
 			]
 		)
 	else:
 		var detail := String(r.get("detail", ""))
 		var detail_line := ("\n解析细节: %s" % detail) if not detail.is_empty() else ""
 		_detail.text = (
-			"[color=#E24C4C]✘ 授权无效[/color]\n错误码: %s\n%s%s\nlicense: %s\ncontrol: %s"
-			% [r.code, License.hint(r.code), detail_line, license_file, control_file]
+			"[color=#E24C4C]✘ 授权无效[/color]\n错误码: %s\n%s%s\nlicense: %s%s"
+			% [r.code, License.hint(r.code), detail_line, license_file, legacy_line]
 		)

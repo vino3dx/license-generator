@@ -1,12 +1,45 @@
+# Godot 缓存与临时文件
 .godot/
 *.tmp
+
+# 本地会话记忆（不入库）
+.workbuddy/
 .workbuddy-ai/
 
+# P0 厂商签发产物：含厂商根私钥与委托私钥，禁止提交
+master-issuer-out/
+tools/master-issuer/out/
+
+# 发布产物（由脚本生成，禁止手工修改）
+releases/
+
+# P1 构建与运行产物
+desktop/node_modules/
+desktop/out/
+desktop/release/
+desktop/coverage/
+desktop/dist/
+
+# P2 独立验证工程的生成物
+tests/integration/verifier-godot/.godot/
+tests/integration/verifier-godot/build/
+tests/integration/verifier-godot/vectors.json
+tests/integration/verifier-godot/strict-json-cases.json
+
+# 日志
+*.log
+
+# 旧 Python 生成器的本地文件（含客户信息，不入库）
 __pycache__/
 python/build/
 python/dist/
 python/*.spec
-# 含客户信息 / 本机设置,不入库
 python/aegis_generator.json
 python/issued_licenses.csv
+
+# 示例工程的本地授权文件（测试样本以 tests/fixtures 下为准）
 godot/license.dat
+
+# 通用系统文件
+.DS_Store
+Thumbs.db

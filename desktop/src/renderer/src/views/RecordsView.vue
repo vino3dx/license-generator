@@ -16,6 +16,7 @@ const ACTIONS = [
   'device_unlock',
   'device_unbind',
   'control_certificate_import',
+  'control_certificate_consume',
   'delegated_key_import',
   'license_issue',
   'license_batch_issue',
@@ -74,7 +75,7 @@ onMounted(refresh)
 <template>
   <section class="page">
     <PageHeader
-      title="签发记录"
+      title="日志信息"
       description="审计日志只追加不修改；这里的记录由业务层写入，界面不能伪造。"
     >
       <template #actions>

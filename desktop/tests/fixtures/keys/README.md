@@ -12,4 +12,4 @@
 2. 不得复制到 `src/`、`out/`、`release/` 或任何随应用分发的位置；`electron-builder.yml` 只打包 `out/**`。
 3. 正式厂商私钥只应存在于厂商自己的签发环境，不进入本仓库。
 
-`tests/fixtures/vectors.json` 由 `AEGIS_WRITE_VECTORS=1 npm test` 生成，Node 与 Godot 两侧共用。
+`tests/vectors/vectors.json`（仓库级）由 `AEGIS_WRITE_VECTORS=1 npm test` 生成，Node 与 Godot 两侧共用。

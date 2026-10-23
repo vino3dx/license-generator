@@ -2,6 +2,7 @@ import { generateKeyPairSync } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
 import { isLicenseError, type LicenseErrorCode } from '@core/license/errors'
 import {
+  assertTimeWindow,
   buildMachinePayload,
   buildVendorPayload,
   parseMachinePayload,
@@ -10,6 +11,7 @@ import {
 } from '@core/license/payloads'
 import { exportPublicKeyParams } from '@core/license/rsa-keys'
 import { parseStrictJson } from '@core/license/strict-json'
+import { LICENSE_SCHEMA_VERSION, PERPETUAL_EXPIRY_YEARS, perpetualExpiryFrom } from '@shared/license/protocol'
 import { makeMachineInput, makeVendorInput } from '../fixtures/test-keys'
 
 function expectCode(action: () => unknown, code: LicenseErrorCode): void {
@@ -33,9 +35,13 @@ describe('payload 规范化', () => {
   it('中控证书字段顺序与协议一致', () => {
     const { bytes } = buildVendorPayload(makeVendorInput())
     const text = bytes.toString('utf8')
-    expect(text.startsWith('{"schema_version":1,"license_type":"vendor-control","license_id":"VND-TEST-0001"')).toBe(true)
+    expect(
+      text.startsWith(
+        `{"schema_version":${LICENSE_SCHEMA_VERSION},"license_type":"vendor-control","license_id":"VND-TEST-0001"`
+      )
+    ).toBe(true)
     expect(text).toContain('"issued_at":"2026-10-01T00:00:00Z"')
-    expect(text.indexOf('"delegated_public_key"')).toBeGreaterThan(text.indexOf('"features"'))
+    expect(text.indexOf('"delegated_public_key"')).toBeGreaterThan(text.indexOf('"max_devices"'))
   })
 
   it('子机授权字段顺序与协议一致', () => {
@@ -43,9 +49,11 @@ describe('payload 规范化', () => {
     const text = bytes.toString('utf8')
     expect(
       text.startsWith(
-        '{"schema_version":1,"license_type":"machine-license","license_id":"MCH-TEST-0001","control_license_id":"VND-TEST-0001"'
+        `{"schema_version":${LICENSE_SCHEMA_VERSION},"license_type":"machine-license","license_id":"MCH-TEST-0001","control_license_id":"VND-TEST-0001"`
       )
     ).toBe(true)
+    // control_cert 是协议 v3 的最后一个字段，内嵌整张中控证书
+    expect(text.indexOf('"control_cert"')).toBeGreaterThan(text.indexOf('"status"'))
   })
 
   it('project_ids 会被排序，* 只能单独出现', () => {
@@ -71,7 +79,6 @@ describe('payload 规范化', () => {
     expectCode(() => buildVendorPayload(makeVendorInput({ maxDevices: 0 })), 'payload_invalid')
     expectCode(() => buildVendorPayload(makeVendorInput({ maxDevices: 1_000_001 })), 'payload_invalid')
     expectCode(() => buildVendorPayload(makeVendorInput({ licenseId: 'bad id' })), 'payload_invalid')
-    expectCode(() => buildVendorPayload(makeVendorInput({ features: ['ok', 'ok'] })), 'payload_invalid')
   })
 
   it('委托公钥强度不足时拒绝', () => {
@@ -122,6 +129,27 @@ describe('payload 规范化', () => {
     expectCode(() => buildMachinePayload(makeMachineInput({ status: 'paused' as 'active' })), 'payload_invalid')
     const { bytes } = buildMachinePayload(makeMachineInput({ status: 'revoked' }))
     expect(parseMachinePayload(bytes).status).toBe('revoked')
+  })
+
+  it('子机授权必须内嵌中控证书', () => {
+    expectCode(() => buildMachinePayload(makeMachineInput({ controlCertificate: '  ' })), 'invalid_input')
+    const { payload } = buildMachinePayload(makeMachineInput())
+    expect(payload.control_cert.length).toBeGreaterThan(0)
+  })
+})
+
+describe('远期有效期边界（assertTimeWindow）', () => {
+  const now = Date.parse('2026-10-22T06:00:00Z')
+  const issued = '2026-10-22T00:00:00Z'
+
+  it('99 年买断上限留有余量，不触发边界溢出', () => {
+    expect(PERPETUAL_EXPIRY_YEARS).toBeLessThan(100)
+    expect(() => assertTimeWindow(issued, perpetualExpiryFrom(now), now, 0)).not.toThrow()
+  })
+
+  it('超过 100 年硬上限时按 payload_invalid 拒绝', () => {
+    const over = `${new Date(now + 100 * 365 * 24 * 60 * 60 * 1000 + 86_400_000).toISOString().slice(0, 19)}Z`
+    expectCode(() => assertTimeWindow(issued, over, now, 0), 'payload_invalid')
   })
 })
 

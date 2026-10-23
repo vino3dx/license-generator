@@ -26,7 +26,12 @@ static var _identifier_regex: RegEx = null
 
 
 ## 返回稳定设备 ID；无法确定时返回空串。project_id 为 Dock 显示的 10 位项目 ID
+##
+## project_id 为空时直接返回空串（fail-closed）：盐值缺失会退化成跨项目共用的设备 ID，
+## 授权可被复制到另一个工程复用，因此宁可让授权校验失败也不生成无盐 ID。
 static func device_id(project_id: String) -> String:
+	if project_id.is_empty():
+		return ""
 	if _cached_project == project_id and not _cached.is_empty():
 		return _cached
 	var raw := OS.get_unique_id().strip_edges()
@@ -64,7 +69,6 @@ static func _load_or_create_fallback() -> String:
 	var file := FileAccess.open(FALLBACK_PATH, FileAccess.WRITE)
 	if file == null:
 		# 无法持久化就不能保证重启稳定，宁可失败也不返回一次性 ID
-		push_error("[Aegis] 无法写入设备 ID 回退文件: %s" % FALLBACK_PATH)
 		return ""
 	file.store_string(generated)
 	file.close()

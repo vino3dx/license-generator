@@ -483,8 +483,8 @@ onMounted(async () => {
           </tbody>
         </table>
         <p class="hint">
-          把上述 license.dat 与中控证书 control.cert 一起交给子机：control.cert 是厂商签发的中控证书，
-          license.dat 是本机签发的子机授权，两者不能混用。
+          license.dat 已按 v3 协议内嵌中控证书（容器格式），子机只需要这一个文件，无需单独分发 control.cert；
+          续期时把新的 license.dat 覆盖到子机同一路径即可。
         </p>
       </div>
     </div>

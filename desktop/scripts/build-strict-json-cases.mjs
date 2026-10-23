@@ -118,6 +118,6 @@ const output = {
   utf8_cases: utf8Cases
 }
 
-const target = join(process.cwd(), 'tests', 'fixtures', 'strict-json-cases.json')
+const target = join(process.cwd(), '..', 'tests', 'vectors', 'strict-json-cases.json')
 writeFileSync(target, `${JSON.stringify(output, null, 2)}\n`, 'utf8')
 console.log(`写入 ${target}：json_cases=${jsonCases.length} utf8_cases=${utf8Cases.length}`)

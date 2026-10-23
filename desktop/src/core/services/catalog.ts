@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import {
   countBoundDevices,
+  findActiveDeviceById,
   findCurrentLicense,
   findDevice,
   findProject,
@@ -123,6 +124,26 @@ export function registerDevice(
   if (existing !== null && existing.unbindAt === null) {
     // 幂等：重复登记不产生新记录、不额外占用额度
     return existing
+  }
+
+  // 跨项目冲突：devices_active_unique 保证一台设备全局只能有一条未解绑记录。
+  // 这里提前给出可理解的业务错误，避免把底层 UNIQUE 约束错误暴露成 unexpected；
+  // 只报错，不自动解绑、不迁移数据。
+  const boundElsewhere = findActiveDeviceById(deps.database, deviceId)
+  if (boundElsewhere !== null && boundElsewhere.projectId !== projectId) {
+    writeAudit(deps, {
+      at,
+      action: 'device_register',
+      targetType: 'device',
+      targetId: deviceId,
+      result: 'failure',
+      errorCode: 'conflict',
+      context: JSON.stringify({ projectId, boundProjectId: boundElsewhere.projectId })
+    })
+    throw new ServiceError(
+      'conflict',
+      `设备 ${deviceId} 已绑定在项目 ${boundElsewhere.projectId}，请先在该项目解绑后再登记到本项目`
+    )
   }
 
   // 走到这里说明这台设备当前不占用名额，登记会新增一个名额

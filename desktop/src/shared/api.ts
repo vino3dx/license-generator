@@ -51,6 +51,8 @@ export interface AegisApi {
     /** 由主进程弹系统文件对话框读取证书文本；取消返回 null */
     pickControlCertificateFile(): Promise<IpcResult<string | null>>
     currentControlCertificate(): Promise<IpcResult<ControlCertificateDto | null>>
+    /** 最近导入的证书（含已作废）；一次性证书规则下用于提示"证书已作废" */
+    lastControlCertificate(): Promise<IpcResult<ControlCertificateDto | null>>
     quota(): Promise<IpcResult<QuotaUsageDto>>
 
     delegatedKeyStatus(): Promise<IpcResult<DelegatedKeyStatusDto>>

@@ -2,6 +2,7 @@ import type { KeyObject } from 'node:crypto'
 import {
   countBoundDevices,
   findActiveControlCertificate,
+  findLatestControlCertificate,
   saveControlCertificate,
   withTransaction,
   type ControlCertificateRecord
@@ -67,7 +68,8 @@ export function importControlCertificate(
     isActive: true,
     projectIds: payload.project_ids,
     maxDevices: payload.max_devices,
-    features: payload.features
+    // 约定 v3.1 §1：features 固定空数组；协议 v3 payload 已不含该字段，仅本地记录保留
+    features: []
   }
 
   withTransaction(deps.database, () => {
@@ -112,8 +114,42 @@ export function loadVerifiedControlCertificate(deps: ResolvedDependencies): Veri
   return { record, verified, payload, scope }
 }
 
+/**
+ * 最近导入的一张证书（含已作废），只用于界面提示。
+ * 一次性证书规则下签发成功后证书即 inactive：这里仍尝试验签以取回 payload，
+ * 验签不过（例如证书随后过期）时退回数据库记录，payload 相关字段留空。
+ */
+export function loadLatestControlCertificate(deps: ResolvedDependencies): ControlCertificateDto | null {
+  const record = findLatestControlCertificate(deps.database)
+  if (record === null) {
+    return null
+  }
+  if (record.isActive) {
+    return toControlCertificateDto(record, loadVerifiedControlCertificate(deps).payload)
+  }
+  try {
+    const verified = verifyVendorCertificate(record.envelope, requireVendorKey(deps), deps.now().getTime())
+    return toControlCertificateDto(record, verified.payload)
+  } catch {
+    return {
+      licenseId: record.licenseId,
+      kid: record.kid,
+      issuedAt: record.issuedAt,
+      expiresAt: record.expiresAt,
+      importedAt: record.importedAt,
+      isActive: false,
+      projectIds: [],
+      maxDevices: 0,
+      features: []
+    }
+  }
+}
+
 /** 额度使用情况：范围内未解绑的登记设备数（锁定设备仍占用） */
-export function quotaUsage(deps: ResolvedDependencies, certificate: VerifiedControlCertificate): QuotaUsageDto {
+export function quotaUsage(
+  deps: ResolvedDependencies,
+  certificate: VerifiedControlCertificate
+): QuotaUsageDto {
   const used = countBoundDevices(deps.database, certificate.scope)
   return {
     controlLicenseId: certificate.payload.license_id,
@@ -135,7 +171,8 @@ export function toControlCertificateDto(
     isActive: record.isActive,
     projectIds: payload.project_ids,
     maxDevices: payload.max_devices,
-    features: payload.features
+    // 约定 v3.1 §1：features 固定空数组，不使用、不传递
+    features: []
   }
 }
 

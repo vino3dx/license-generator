@@ -2,46 +2,65 @@
 import { computed, onMounted, ref, type Component } from 'vue'
 import { WORKSPACE_ENTRIES, type AppInfo, type WorkspaceKey } from '@shared/ipc-contract'
 import type { ControlCertificateDto } from '@shared/license/service-contract'
-import ProjectsView from '@renderer/views/ProjectsView.vue'
-import DevicesView from '@renderer/views/DevicesView.vue'
-import IssueView from '@renderer/views/IssueView.vue'
+import LicenseManageView from '@renderer/views/LicenseManageView.vue'
 import RecordsView from '@renderer/views/RecordsView.vue'
 import StatusBadge from '@renderer/components/StatusBadge.vue'
 import { appApi, licenseApi } from '@renderer/lib/api'
 import { daysUntil } from '@renderer/lib/format'
 
 const views: Record<WorkspaceKey, Component> = {
-  projects: ProjectsView,
-  devices: DevicesView,
-  issue: IssueView,
+  license: LicenseManageView,
   records: RecordsView
 }
 
-const activeKey = ref<WorkspaceKey>('projects')
+const activeKey = ref<WorkspaceKey>('license')
 const activeView = computed<Component>(() => views[activeKey.value])
 const appInfo = ref<AppInfo | null>(null)
 const certificate = ref<ControlCertificateDto | null>(null)
+/** 最近导入的一张证书（含已作废）；只用于状态展示，不等于"当前可用证书" */
+const lastCertificate = ref<ControlCertificateDto | null>(null)
 const vendorConfigured = ref<boolean | null>(null)
 const runtimeError = ref('')
 
+/**
+ * 顶栏状态只做"事实汇总"，有效性全部来自业务层查询结果：
+ * - certificate 来自 currentControlCertificate()（业务层已验签 + 校验有效期，失败返回 null）
+ * - lastCertificate 来自 lastControlCertificate()（最近导入记录，isActive 表示是否被作废/替换）
+ */
 const controlState = computed<{ tone: 'ok' | 'warn' | 'danger' | 'muted'; text: string }>(() => {
   if (runtimeError.value.length > 0) {
-    return { tone: 'danger', text: `运行时不可用：${runtimeError.value}` }
+    return { tone: 'danger', text: `状态无法确认：${runtimeError.value}` }
+  }
+  if (vendorConfigured.value === null) {
+    return { tone: 'muted', text: '正在确认中控授权状态…' }
   }
   if (vendorConfigured.value === false) {
     return { tone: 'danger', text: '未配置厂商公钥，不能验证中控证书' }
   }
-  if (certificate.value === null) {
-    return { tone: 'warn', text: '未导入中控授权' }
+  if (certificate.value !== null) {
+    const days = daysUntil(certificate.value.expiresAt)
+    if (days !== null && days <= 0) {
+      return { tone: 'danger', text: `中控授权已过期（${certificate.value.licenseId}）` }
+    }
+    if (days !== null && days <= 30) {
+      return { tone: 'warn', text: `中控授权 ${days} 天后到期（${certificate.value.licenseId}）` }
+    }
+    return { tone: 'ok', text: `中控授权有效（${certificate.value.licenseId}）` }
   }
-  const days = daysUntil(certificate.value.expiresAt)
-  if (days !== null && days <= 0) {
-    return { tone: 'danger', text: `中控授权已过期（${certificate.value.licenseId}）` }
+  // 没有可用证书时，用最近导入记录区分「从未导入」「已作废」「过期或无效」
+  if (lastCertificate.value === null) {
+    return { tone: 'warn', text: '未导入中控授权证书' }
   }
-  if (days !== null && days <= 30) {
-    return { tone: 'warn', text: `中控授权 ${days} 天后到期` }
+  if (!lastCertificate.value.isActive) {
+    return {
+      tone: 'warn',
+      text: `中控授权 ${lastCertificate.value.licenseId} 已作废（一次性证书），需导入新证书`
+    }
   }
-  return { tone: 'ok', text: `中控授权有效（${certificate.value.licenseId}）` }
+  return {
+    tone: 'danger',
+    text: `中控授权 ${lastCertificate.value.licenseId} 已过期或无效，需导入新证书`
+  }
 })
 
 onMounted(async () => {
@@ -52,14 +71,18 @@ onMounted(async () => {
   }
   try {
     const api = licenseApi()
-    const [controlResult, vendorResult] = await Promise.all([
+    const [controlResult, lastResult, vendorResult] = await Promise.all([
       api.currentControlCertificate(),
+      api.lastControlCertificate(),
       api.vendorKeyStatus()
     ])
     if (controlResult.ok) {
       certificate.value = controlResult.value
     } else {
       runtimeError.value = controlResult.error.message
+    }
+    if (lastResult.ok) {
+      lastCertificate.value = lastResult.value
     }
     if (vendorResult.ok) {
       vendorConfigured.value = vendorResult.value.configured

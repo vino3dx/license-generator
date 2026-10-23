@@ -1,6 +1,10 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { countBoundDevices } from '@core/db'
+import { parseLicenseContainer } from '@core/license/container'
+import { parseEnvelope } from '@core/license/envelope'
+import { decodeControlCertificate, parseMachinePayload } from '@core/license/payloads'
 import { isServiceError } from '@core/services'
 import { createHarness } from './harness'
 
@@ -13,6 +17,23 @@ function expectServiceError(action: () => unknown, code: string): void {
     return
   }
   throw new Error(`期望抛出 ${code}，但调用成功`)
+}
+
+function captureServiceError(action: () => unknown): Record<string, unknown> {
+  try {
+    action()
+  } catch (error) {
+    expect(isServiceError(error)).toBe(true)
+    return error as unknown as Record<string, unknown>
+  }
+  throw new Error('期望抛出 ServiceError，但调用成功')
+}
+
+function activeControlEnvelope(harness: ReturnType<typeof createHarness>): string {
+  const row = harness.database
+    .prepare('SELECT envelope FROM control_certificates ORDER BY imported_at DESC, rowid DESC LIMIT 1')
+    .get() as { envelope: string }
+  return row.envelope
 }
 
 function prepare(harness: ReturnType<typeof createHarness>, devices = ['dev-1'], maxDevices = 3): void {
@@ -36,6 +57,15 @@ describe('签发', () => {
       expect(license.expiresAt).toBe('2027-01-20T06:00:00Z')
       expect(harness.files.exists(license.fileName)).toBe(true)
 
+      // 约定 v3.1 §2：文件是容器，内嵌当前 control.cert；payload 内嵌同一份证书
+      const controlEnvelope = activeControlEnvelope(harness)
+      const container = parseLicenseContainer(
+        new TextEncoder().encode(readFileSync(join(harness.files.rootDir, license.fileName), 'utf8'))
+      )
+      expect(container.control).toBe(controlEnvelope)
+      const opened = parseEnvelope(container.license, 'machine-license')
+      expect(decodeControlCertificate(parseMachinePayload(opened.payloadBytes).control_cert)).toBe(controlEnvelope)
+
       const status = harness.services.devices.status({ projectId: 'proj-alpha', deviceId: 'dev-1' })
       expect(status.license?.licenseId).toBe(license.licenseId)
       expect(status.file).toEqual({ ok: true, code: null })
@@ -53,11 +83,14 @@ describe('签发', () => {
       prepare(harness)
       const license = harness.services.licensing.issue({ projectId: 'proj-alpha', deviceId: 'dev-1' })
       const path = join(harness.files.rootDir, license.fileName)
-      const record = JSON.parse(readFileSync(path, 'utf8')) as Record<string, string>
-      const payload = Buffer.from(record['payload'] ?? '', 'base64url')
+      // 篡改容器内层信封的 payload，容器结构本身保持合法
+      const container = JSON.parse(readFileSync(path, 'utf8')) as Record<string, string>
+      const envelope = JSON.parse(container['license'] ?? '') as Record<string, string>
+      const payload = Buffer.from(envelope['payload'] ?? '', 'base64url')
       payload[20] = (payload[20] ?? 0) ^ 0x01
-      record['payload'] = payload.toString('base64url')
-      writeFileSync(path, JSON.stringify(record), 'utf8')
+      envelope['payload'] = payload.toString('base64url')
+      container['license'] = JSON.stringify(envelope)
+      writeFileSync(path, JSON.stringify(container), 'utf8')
 
       const status = harness.services.devices.status({ projectId: 'proj-alpha', deviceId: 'dev-1' })
       expect(status.license?.status).toBe('active')
@@ -81,6 +114,17 @@ describe('签发', () => {
           }),
         'license_expiry_invalid'
       )
+      // 约定 v3.1：超限报错必须带上中控证书的上限日期
+      const overLimit = captureServiceError(() =>
+        harness.services.licensing.issue({
+          projectId: 'proj-alpha',
+          deviceId: 'dev-1',
+          expiresAt: '2027-12-01T00:00:00Z'
+        })
+      )
+      expect(overLimit['code']).toBe('license_expiry_invalid')
+      expect(String(overLimit['message'])).toContain('2027-10-01T00:00:00Z')
+      expect((overLimit['details'] as Record<string, unknown>)['maxExpiresAt']).toBe('2027-10-01T00:00:00Z')
       expectServiceError(
         () =>
           harness.services.licensing.issue({
@@ -202,13 +246,18 @@ describe('签发', () => {
     try {
       prepare(harness)
       const first = harness.services.licensing.issue({ projectId: 'proj-alpha', deviceId: 'dev-1' })
+      // 一次性证书：续期前必须先导入新证书
+      harness.services.control.importCertificate(
+        harness.controlEnvelope({ licenseId: 'VND-TEST-0002' })
+      )
       const renewed = harness.services.licensing.renew({
         projectId: 'proj-alpha',
         deviceId: 'dev-1',
         expiresAt: '2027-08-01T00:00:00Z'
       })
       expect(renewed.licenseId).not.toBe(first.licenseId)
-      expect(harness.services.control.quota().usedDevices).toBe(1)
+      // 续期不额外占用额度（证书已随续期作废，用数据库口径核对）
+      expect(countBoundDevices(harness.database, null)).toBe(1)
 
       const licenses = harness.services.licensing.list({ deviceId: 'dev-1' })
       const previous = licenses.find((item) => item.licenseId === first.licenseId)
@@ -230,6 +279,88 @@ describe('签发', () => {
         () => harness.services.licensing.renew({ projectId: 'proj-alpha', deviceId: 'dev-1' }),
         'not_found'
       )
+    } finally {
+      harness.cleanup()
+    }
+  })
+})
+
+describe('一次性证书（签发成功后作废）', () => {
+  it('签发成功后证书作废，必须导入新证书才能再次签发', () => {
+    const harness = createHarness()
+    try {
+      prepare(harness)
+      const license = harness.services.licensing.issue({ projectId: 'proj-alpha', deviceId: 'dev-1' })
+
+      expect(harness.services.control.current()).toBeNull()
+      const row = harness.database
+        .prepare('SELECT is_active FROM control_certificates WHERE license_id = ?')
+        .get('VND-TEST-0001') as { is_active: number }
+      expect(row.is_active).toBe(0)
+
+      // 最近导入记录仍可读，并标记为已作废（界面据此提示）
+      const last = harness.services.control.last()
+      expect(last?.licenseId).toBe('VND-TEST-0001')
+      expect(last?.isActive).toBe(false)
+
+      // 再次签发与续期都被拒绝
+      expectServiceError(
+        () => harness.services.licensing.issue({ projectId: 'proj-alpha', deviceId: 'dev-1' }),
+        'control_certificate_missing'
+      )
+      expectServiceError(
+        () => harness.services.licensing.renew({ projectId: 'proj-alpha', deviceId: 'dev-1' }),
+        'control_certificate_missing'
+      )
+
+      // 已签发的授权不受影响：文件仍通过验签
+      const status = harness.services.devices.status({ projectId: 'proj-alpha', deviceId: 'dev-1' })
+      expect(status.file).toEqual({ ok: true, code: null })
+      expect(license.fileState).toBe('written')
+
+      const audit = harness.services.audit.list({ action: 'control_certificate_consume' })
+      expect(audit.filter((item) => item.result === 'success')).toHaveLength(1)
+
+      // 导入新证书后恢复签发能力
+      harness.services.control.importCertificate(harness.controlEnvelope({ licenseId: 'VND-TEST-0002' }))
+      const again = harness.services.licensing.issue({ projectId: 'proj-alpha', deviceId: 'dev-1' })
+      expect(again.status).toBe('active')
+    } finally {
+      harness.cleanup()
+    }
+  })
+
+  it('批量签发成功后证书只作废一次', () => {
+    const harness = createHarness()
+    try {
+      prepare(harness, ['dev-1', 'dev-2'], 5)
+      const result = harness.services.licensing.issueBatch({
+        projectId: 'proj-alpha',
+        deviceIds: ['dev-1', 'dev-2']
+      })
+      expect(result.issued).toHaveLength(2)
+      expect(harness.services.control.current()).toBeNull()
+      const audit = harness.services.audit.list({ action: 'control_certificate_consume' })
+      expect(audit.filter((item) => item.result === 'success')).toHaveLength(1)
+    } finally {
+      harness.cleanup()
+    }
+  })
+
+  it('签发失败（整批回滚）不会作废证书', () => {
+    const harness = createHarness()
+    try {
+      prepare(harness, ['dev-1'], 5)
+      expectServiceError(
+        () =>
+          harness.services.licensing.issueBatch({
+            projectId: 'proj-alpha',
+            deviceIds: ['dev-1', 'dev-missing']
+          }),
+        'not_found'
+      )
+      expect(harness.services.control.current()?.licenseId).toBe('VND-TEST-0001')
+      expect(harness.services.audit.list({ action: 'control_certificate_consume' })).toHaveLength(0)
     } finally {
       harness.cleanup()
     }

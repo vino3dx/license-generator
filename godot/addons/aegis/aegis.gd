@@ -1,119 +1,126 @@
 extends Node
 ## Aegis 运行时授权守卫（autoload 名: Aegis）
-## 启动时校验一次，之后每 10 分钟及窗口重新获得焦点（如睡眠唤醒）时复查。
 ##
-## 校验失败：暂停场景树 → 记录日志 → 显示可关闭的错误提示 → 退出程序（exit code 1）。
-## 提示框只有「确定」，关闭它等同于确认失败，不会继续运行；headless 环境直接退出。
+## 行为（2026-10-23 用户决定，覆盖 v3.1 的「申请码界面 + 过期自动恢复」方案）：
+## - 授权无效（缺失 / 过期 / 校验失败 / 设备或项目不匹配 / 旧格式等）一律**静默退出**：
+##   不弹窗、不建任何界面、不打印、不写日志，退出码 1。
+##   最终用户不能从本插件得到任何授权失败的原因或提示。
+## - 授权有效时正常运行；临期（< 30 天）后台静默拉取续期，成功则无缝替换授权文件，不重启。
+##   注意：进程一旦因授权无效退出，就没有机会再自动恢复——这是本方案的既定取舍。
+## - 编辑器内可用 aegis.cfg 关闭校验（Dock 可见状态）；导出后始终强制校验。
 ##
-## 启动时机说明（Godot 固定顺序）：
-##   autoload._ready() 先于主场景实例化执行，因此校验发生在任何游戏逻辑之前；
-##   但 quit() 只在当前帧末生效，主场景的 _ready() 仍会在同一帧内被调用一次。
-##   受保护逻辑必须放在 _process/_physics_process，或用 Aegis.is_licensed() 门控后再启动。
+## 不清空 main_scene：拦截靠「暂停场景树 + quit(1)」。autoload 的 _ready() 早于主场景
+## 实例化，但主场景 _ready() 仍会在同一帧被调用一次，因此受保护逻辑必须用
+## Aegis.is_licensed() 门控，或放到 _process / _physics_process 里。
 
 const License := preload("res://addons/aegis/aegis_license.gd")
+const Net := preload("res://addons/aegis/aegis_net.gd")
+
 const RECHECK_INTERVAL := 600.0 # 运行中复查间隔（秒）
-const DIALOG_GRACE := 5.0 # 弹窗未显示时的兜底等待（秒）
-const DIALOG_HARD_TIMEOUT := 30.0 # 弹窗已显示但始终未关闭时的强制退出等待（秒）
+const RENEW_POLL_INTERVAL := 21600.0 # 临期（<30 天）后台拉取间隔：6 小时
 
 var last_result: Dictionary = {} # 最近一次校验结果，游戏内可读取 last_result.days_left 等
-var _denied := false
 var _quitting := false
-var _dialog: AcceptDialog = null
+var _check_timer: Timer = null
+var _pull_timer: Timer = null
+var _net: Node = null
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if not License.is_enabled():
-		print("[Aegis] 授权校验已在编辑器中关闭 (aegis.cfg)。")
 		return
-	if not _check():
+	last_result = License.evaluate()
+	if bool(last_result.get("valid", false)):
+		_start_recheck()
+		_maybe_pull()
 		return
-	print("[Aegis] 授权有效（到期 %s，剩余 %d 天）。" % [last_result.expire, last_result.days_left])
-	var timer := Timer.new()
-	timer.wait_time = RECHECK_INTERVAL
-	timer.autostart = true
-	timer.timeout.connect(_check)
-	add_child(timer)
+	_quit_denied()
 
 
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_APPLICATION_FOCUS_IN and is_inside_tree() and not _denied and License.is_enabled():
+	if what == NOTIFICATION_APPLICATION_FOCUS_IN and is_inside_tree() and License.is_enabled():
 		_check()
 
 
-## 供受保护逻辑门控：授权有效且未被拒绝。
-## 主场景 _ready() 一定晚于本 autoload，但同一帧内仍会被调用，业务入口应以此为准。
+## 供受保护逻辑门控：授权有效且未在退出流程中。
 ## 编辑器内通过 aegis.cfg 显式关闭校验时返回 true（导出后 is_enabled() 恒为 true）。
 func is_licensed() -> bool:
 	if not License.is_enabled():
 		return true
-	return not _denied and bool(last_result.get("valid", false))
+	return not _quitting and bool(last_result.get("valid", false))
 
 
-func _check() -> bool:
-	if _denied:
-		return false
+func _check() -> void:
+	if _quitting:
+		return
 	last_result = License.evaluate()
-	if last_result.valid:
-		return true
-	_deny(last_result)
-	return false
-
-
-func _deny(r: Dictionary) -> void:
-	if _denied:
+	if bool(last_result.get("valid", false)):
+		_maybe_pull()
 		return
-	_denied = true
-	var detail := String(r.get("detail", ""))
-	var suffix := (" detail=%s" % detail) if not detail.is_empty() else ""
-	print("[Aegis] 授权校验失败 (Err: %s%s)" % [r.code, suffix])
+	_quit_denied()
 
-	# 先暂停场景树：默认 PROCESS_MODE_INHERIT 的节点（含随后实例化的主场景）
-	# 不会再执行 _process / _physics_process，失败后受保护逻辑不会继续运行。
-	get_tree().paused = true
 
-	# headless / 无显示环境下弹窗没有意义，直接以失败退出
-	if DisplayServer.get_name() == "headless":
-		_quit(1)
+func _start_recheck() -> void:
+	if _check_timer != null:
 		return
-
-	var dialog := AcceptDialog.new()
-	dialog.title = "授权校验失败"
-	dialog.dialog_text = "错误码：%s\n%s\n\n程序将退出。" % [r.code, License.hint(r.code)]
-	dialog.exclusive = true
-	dialog.unresizable = true
-	dialog.process_mode = Node.PROCESS_MODE_ALWAYS
-	dialog.confirmed.connect(_quit_after_denial)
-	dialog.canceled.connect(_quit_after_denial)
-	_dialog = dialog
-
-	# autoload 的 _ready 阶段根节点正在装配子节点，直接 add_child 会失败，
-	# 必须延迟挂载，否则弹窗不会出现、进程也不会退出。
-	get_tree().root.add_child.call_deferred(dialog)
-	dialog.popup_centered.call_deferred()
-	_watchdog()
+	_check_timer = Timer.new()
+	_check_timer.wait_time = RECHECK_INTERVAL
+	_check_timer.autostart = true
+	_check_timer.timeout.connect(_check)
+	add_child(_check_timer)
 
 
-## 兜底：弹窗若因环境异常未能显示，5 秒后仍按失败退出；
-## 弹窗显示了但用户始终不关闭时，30 秒后同样强制退出，
-## 避免「失败后进程无限挂起」（PROCESS_MODE_ALWAYS 的节点不会被 paused 拦住）。
-func _watchdog() -> void:
-	await get_tree().create_timer(DIALOG_GRACE, true).timeout
-	if is_instance_valid(_dialog) and _dialog.visible:
-		await get_tree().create_timer(DIALOG_HARD_TIMEOUT, true).timeout
-		_quit(1)
+## 临期窗口内才联网：有效期内完全不访问网络（网络只能延长授权，不能维持授权）
+func _maybe_pull() -> void:
+	if not License.is_renewal_due(last_result):
 		return
-	_quit(1)
+	_ensure_net()
+	_net.request_pull(last_result)
+	_start_pull_timer(RENEW_POLL_INTERVAL)
 
 
-## 无论用户点确定还是按 ESC 关闭，都按失败退出：关闭提示不能绕过授权校验
-func _quit_after_denial() -> void:
-	_quit(1)
+func _ensure_net() -> void:
+	if _net != null:
+		return
+	var net := Net.new()
+	net.name = "AegisNet"
+	net.license_updated.connect(_on_license_updated)
+	add_child(net)
+	_net = net
 
 
-## 退出只执行一次，避免弹窗回调与 watchdog 重复触发退出流程
-func _quit(code: int) -> void:
+func _start_pull_timer(interval: float) -> void:
+	if _pull_timer == null:
+		_pull_timer = Timer.new()
+		_pull_timer.autostart = false
+		_pull_timer.timeout.connect(_on_pull_tick)
+		add_child(_pull_timer)
+	_pull_timer.wait_time = interval
+	_pull_timer.start()
+
+
+func _on_pull_tick() -> void:
+	if _net != null:
+		_net.request_pull(last_result)
+
+
+func _on_license_updated(result: Dictionary) -> void:
+	# 后台续期成功：无缝换新授权，不重启、不提示
+	last_result = result
+	_start_recheck()
+	if License.is_renewal_due(result):
+		_maybe_pull()
+	elif _pull_timer != null:
+		_pull_timer.stop()
+
+
+## 静默失败：不打印、不弹窗、不建任何 UI。
+## paused 必须在 quit 之前设置：quit 只在帧末生效，主场景 _ready 会在同帧先执行一次，
+## 暂停后其 _process / _physics_process 从第一帧起就被拦住，受保护逻辑不会继续运行。
+func _quit_denied() -> void:
 	if _quitting:
 		return
 	_quitting = true
-	get_tree().quit.call_deferred(code)
+	get_tree().paused = true
+	get_tree().quit.call_deferred(1)

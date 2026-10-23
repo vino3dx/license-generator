@@ -153,6 +153,41 @@ describe('设备登记与额度', () => {
     }
   })
 
+  it('设备已绑定在其他项目时返回 conflict，不自动解绑或迁移', () => {
+    const harness = createHarness()
+    try {
+      harness.services.control.importCertificate(harness.controlEnvelope({ maxDevices: 5 }))
+      harness.services.projects.create({ projectId: 'proj-a', name: '项目 A' })
+      harness.services.projects.create({ projectId: 'proj-b', name: '项目 B' })
+      harness.services.devices.register({ projectId: 'proj-a', deviceId: 'dev-1' })
+
+      // 底层是 devices_active_unique 唯一约束；服务层提前给出可理解的业务错误
+      expectServiceError(
+        () => harness.services.devices.register({ projectId: 'proj-b', deviceId: 'dev-1' }),
+        'conflict'
+      )
+
+      // 原绑定保持原样，未被迁移或解绑
+      const inA = harness.services.devices.list({ projectId: 'proj-a' })
+      expect(inA).toHaveLength(1)
+      expect(inA[0]?.unbindAt).toBeNull()
+      expect(harness.services.devices.list({ projectId: 'proj-b' })).toHaveLength(0)
+
+      // 审计记录冲突与目标项目，便于现场排查
+      const audit = harness.services.audit.list({ action: 'device_register', limit: 20 })
+      const failure = audit.find((item) => item.result === 'failure')
+      expect(failure?.errorCode).toBe('conflict')
+      expect(failure?.context).toContain('boundProjectId')
+
+      // 显式解绑后可以登记到新项目
+      harness.services.devices.unbind({ projectId: 'proj-a', deviceId: 'dev-1', reason: '换现场' })
+      const moved = harness.services.devices.register({ projectId: 'proj-b', deviceId: 'dev-1' })
+      expect(moved.projectId).toBe('proj-b')
+    } finally {
+      harness.cleanup()
+    }
+  })
+
   it('未签发授权时设备状态为 no_license', () => {
     const harness = createHarness()
     try {

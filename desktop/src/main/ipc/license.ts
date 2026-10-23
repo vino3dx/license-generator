@@ -108,6 +108,7 @@ export function registerLicenseIpc(): void {
       () => pickControlCertificateText()
     ],
     [LICENSE_IPC_CHANNELS.controlCurrent, () => getLicenseRuntime().services.control.current()],
+    [LICENSE_IPC_CHANNELS.controlLast, () => getLicenseRuntime().services.control.last()],
     [LICENSE_IPC_CHANNELS.quotaUsage, () => getLicenseRuntime().services.control.quota()],
     [
       LICENSE_IPC_CHANNELS.delegatedKeyStatus,

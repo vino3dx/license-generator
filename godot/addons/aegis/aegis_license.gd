@@ -4,9 +4,14 @@ extends RefCounted
 ## license.dat 是容器（严格 JSON）：{"v":1,"license":"<machine-license 信封>","control":"<vendor-control 信封>"}
 ## 信封与 payload 一字不改；子机不再读取单独的 control.cert 文件。
 ##
-## 流程：
-##   设备 ID（project_id 加盐）→ 严格解析容器 → 内置厂商公钥验中控证书
-##   → 证书内委托公钥验子机授权 → 项目/设备/状态/有效期绑定校验 → 防回拨 → 到期判断
+## 校验顺序（共同约定 v3.1 第 4 条，任一失败即拒绝）：
+##   a) 容器内 control 信封：厂商公钥验签有效
+##   b) 容器内 license 信封：可由 cert.delegated_public_key 验签
+##   c) license.device_id == 本机设备 ID（project_id 加盐）
+##   d) 本机 project_id ∈ cert.project_ids，且与 license.project_id 一致
+##   e) license.expires_at <= cert.expires_at
+##   f) 当前时间 < license.expires_at
+## 另保留协议 §8 的 control_license_id / status 绑定校验、时间戳顺序与防回拨。
 ##
 ## 安全约定：
 ## - 先验签、后解析业务字段；验签失败一律拒绝，不降级、不静默放行；
@@ -28,6 +33,9 @@ const RENEW_WINDOW := 30 # 距到期不足该天数进入临期，开始后台�
 const LICENSE_FILE := "license.dat"
 const LEGACY_CONTROL_FILE := "control.cert" # 仅用于识别旧版两文件布局，不再读取其内容
 const CONTAINER_MAX := 16384 # 容器大小上限（字节）
+const CONTAINER_VERSION := 1
+const CONTAINER_KEYS := ["v", "license", "control"]
+const TEMP_SUFFIX := ".tmp" # 原子替换授权文件时使用的临时文件后缀
 
 const ERR_OK := "0x000"
 const ERR_LICENSE_MISSING := "0x011"
@@ -112,8 +120,9 @@ static func license_path() -> String:
 	return _base_dir().path_join(LICENSE_FILE)
 
 
-static func control_path() -> String:
-	return _base_dir().path_join(CONTROL_FILE)
+## 旧版两文件布局中的证书路径：只用于识别旧格式，不再读取其内容
+static func legacy_control_path() -> String:
+	return _base_dir().path_join(LEGACY_CONTROL_FILE)
 
 
 static func _read_bytes(path: String) -> PackedByteArray:
@@ -178,6 +187,143 @@ static func reset_time_record() -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(RECORD_PATH))
 
 
+static func _empty_result() -> Dictionary:
+	var pc := project_code()
+	return {
+		"valid": false,
+		"code": "",
+		"detail": "",
+		"days_left": -1,
+		"issue": "",
+		"expire": "",
+		"project": pc,
+		"device": "",
+		"license_id": "",
+		"control_id": ""
+	}
+
+
+## 协议时间戳的公开解析入口（-1 表示非法）；网络层比较到期时间时复用同一个解析器
+static func timestamp(value: String) -> int:
+	return _parse_utc(value)
+
+
+static func _has_exact_keys(value: Dictionary, expected: Array) -> bool:
+	if value.keys().size() != expected.size():
+		return false
+	for key in expected:
+		if not value.has(key):
+			return false
+	return true
+
+
+static func _container_fail(code: String, detail: String) -> Dictionary:
+	return {"ok": false, "code": code, "detail": detail, "license": "", "control": ""}
+
+
+## 严格解析 license.dat 容器（共同约定 v3.1 第 3 条）。
+## 返回 {ok, code, detail, license, control}：
+## - 旧版裸信封或旧两文件布局 → 0x016；其余结构问题 → 0x015（都给明确错误码，不崩溃）。
+## - 键集合严格、版本必须为 1、两个字段必须是非空字符串、整体不超过 16384 字节。
+static func parse_container(bytes: PackedByteArray) -> Dictionary:
+	if bytes.is_empty():
+		return _container_fail(ERR_LICENSE_EMPTY, "")
+	if bytes.size() > CONTAINER_MAX:
+		return _container_fail(ERR_CONTAINER_INVALID, "container_too_large")
+	if not StrictJson.is_valid_utf8(bytes):
+		return _container_fail(ERR_CONTAINER_INVALID, "json_invalid_utf8")
+	var text := bytes.get_string_from_utf8()
+	var parsed := StrictJson.parse(text)
+	if not parsed["ok"]:
+		# 旧版把裸信封直接写进 license.dat：能确认为信封时给旧格式错误码
+		if text.contains("license-envelope"):
+			return _container_fail(ERR_LEGACY_FORMAT, "")
+		return _container_fail(ERR_CONTAINER_INVALID, String(parsed["error"]))
+	var value = parsed["value"]
+	if typeof(value) != TYPE_DICTIONARY:
+		return _container_fail(ERR_CONTAINER_INVALID, "container_not_object")
+	var container: Dictionary = value
+	if container.has("aegis"):
+		return _container_fail(ERR_LEGACY_FORMAT, "")
+	if not _has_exact_keys(container, CONTAINER_KEYS):
+		return _container_fail(ERR_CONTAINER_INVALID, "container_keys")
+	var version = container["v"]
+	if typeof(version) != TYPE_FLOAT and typeof(version) != TYPE_INT:
+		return _container_fail(ERR_CONTAINER_INVALID, "container_version")
+	if int(version) != CONTAINER_VERSION:
+		return _container_fail(ERR_CONTAINER_INVALID, "container_version")
+	var license_text = container["license"]
+	var control_text = container["control"]
+	if typeof(license_text) != TYPE_STRING or typeof(control_text) != TYPE_STRING:
+		return _container_fail(ERR_CONTAINER_INVALID, "container_fields")
+	if String(license_text).is_empty() or String(control_text).is_empty():
+		return _container_fail(ERR_CONTAINER_INVALID, "container_fields")
+	return {
+		"ok": true,
+		"code": ERR_OK,
+		"detail": "",
+		"license": String(license_text),
+		"control": String(control_text)
+	}
+
+
+## 是否需要进入临期拉取窗口：剩余天数 < RENEW_WINDOW。
+## 传入 evaluate() 的结果可避免重复验签；不传则内部重新校验（不写时间记录）。
+static func is_renewal_due(result: Dictionary = {}) -> bool:
+	var r := result
+	if r.is_empty():
+		r = evaluate(false)
+	if not bool(r.get("valid", false)):
+		return false
+	var days := int(r.get("days_left", -1))
+	return days >= 0 and days < RENEW_WINDOW
+
+
+## 原子替换 license.dat（临时文件 + rename），「导入授权文件」与「局域网拉取」共用。
+## 失败时保持原文件不变并清理临时文件。
+static func replace_license_bytes(bytes: PackedByteArray) -> bool:
+	if bytes.is_empty() or bytes.size() > CONTAINER_MAX:
+		return false
+	var target := license_path()
+	var temp := target + TEMP_SUFFIX
+	var file := FileAccess.open(temp, FileAccess.WRITE)
+	if file == null:
+		return false
+	file.store_buffer(bytes)
+	file.close()
+	var dir := DirAccess.open(_base_dir())
+	if dir == null:
+		DirAccess.remove_absolute(temp)
+		return false
+	# 部分文件系统不允许 rename 覆盖已存在文件，失败时退化为「先删后改名」（窗口极短）
+	if dir.rename(temp.get_file(), LICENSE_FILE) != OK:
+		DirAccess.remove_absolute(target)
+		if dir.rename(temp.get_file(), LICENSE_FILE) != OK:
+			DirAccess.remove_absolute(temp)
+			return false
+	return true
+
+
+## 导入外部授权文件：先完整校验，通过后才原子替换；返回最终 evaluate() 结果
+static func install_from_path(path: String) -> Dictionary:
+	if not FileAccess.file_exists(path):
+		var missing := _empty_result()
+		missing.device = Device.device_id(String(missing["project"]))
+		return _fail(missing, ERR_LICENSE_MISSING)
+	var bytes := _read_bytes(path)
+	if bytes.is_empty():
+		var empty := _empty_result()
+		empty.device = Device.device_id(String(empty["project"]))
+		return _fail(empty, ERR_LICENSE_EMPTY)
+	var result := evaluate_bytes(bytes, false)
+	if not bool(result["valid"]):
+		return result
+	if not replace_license_bytes(bytes):
+		return _fail_detail(result, ERR_CONTAINER_INVALID, "install_failed")
+	# 落盘成功后再写一次时间记录并重算剩余天数，保证与后续 evaluate() 完全一致
+	return evaluate(true)
+
+
 static func _fail(r: Dictionary, code: String) -> Dictionary:
 	r.valid = false
 	r.code = code
@@ -192,69 +338,70 @@ static func _fail_detail(r: Dictionary, code: String, detail: String) -> Diction
 	return r
 
 
-## 主入口。返回 {valid, code, detail, days_left, issue, expire, project, device, license_id, control_id}
+## 主入口：读取固定位置的 license.dat 并校验。
+## 返回 {valid, code, detail, days_left, issue, expire, project, device, license_id, control_id}
 ## update_record=false 时不写时间记录（编辑器 Dock 查看状态用）
 static func evaluate(update_record: bool = true) -> Dictionary:
-	var pc := project_code()
-	var r := {
-		"valid": false,
-		"code": "",
-		"detail": "",
-		"days_left": -1,
-		"issue": "",
-		"expire": "",
-		"project": pc,
-		"device": "",
-		"license_id": "",
-		"control_id": ""
-	}
+	# 信任根优先：未配置厂商公钥时任何授权都不可能是有效的，先报 0x062，
+	# 否则发布前检查会看到「未找到 license.dat」而误以为只是漏拷文件。
+	if not VendorKey.is_configured():
+		var unconfigured := _empty_result()
+		unconfigured.device = Device.device_id(String(unconfigured["project"]))
+		return _fail(unconfigured, ERR_VENDOR_KEY_MISSING)
+	var path := license_path()
+	if not FileAccess.file_exists(path):
+		var missing := _empty_result()
+		missing.device = Device.device_id(String(missing["project"]))
+		# 旧版两文件布局（有 control.cert 没有容器）给明确的旧格式错误码，不误报为「缺失」
+		if FileAccess.file_exists(legacy_control_path()):
+			return _fail(missing, ERR_LEGACY_FORMAT)
+		return _fail(missing, ERR_LICENSE_MISSING)
+	return evaluate_bytes(_read_bytes(path), update_record)
+
+
+## 校验任意容器字节：导入授权文件与局域网拉取共用同一套链路，不重复实现校验。
+## 默认不写防回拨时间记录，只有真正生效的本地授权才更新时间基线。
+static func evaluate_bytes(container_bytes: PackedByteArray, update_record: bool = false) -> Dictionary:
+	var r := _empty_result()
+	var pc := String(r["project"])
 
 	# 1. 信任根必须存在，否则任何授权都无法验证
 	if not VendorKey.is_configured():
 		return _fail(r, ERR_VENDOR_KEY_MISSING)
 
 	# 2. 设备身份：拿不到稳定 ID 就拒绝，不用临时值凑数
-	var device := Device.device_id()
+	var device := Device.device_id(pc)
 	r.device = device
 	if device.is_empty():
 		return _fail(r, ERR_DEVICE_UNAVAILABLE)
 
 	var now := int(Time.get_unix_time_from_system())
 
-	# 3. 中控证书：读字节 → 严格 UTF-8 → 结构 → 厂商公钥验签
-	var control_path_value := control_path()
-	var control_bytes := _read_bytes(control_path_value)
-	if control_bytes.is_empty():
-		if not FileAccess.file_exists(control_path_value):
-			return _fail(r, ERR_CONTROL_MISSING)
-		return _fail(r, ERR_CONTROL_EMPTY)
-	var control := Verifier.verify_envelope_bytes(
-		control_bytes, VendorKey.VENDOR_PUBLIC_KEY, "vendor-control"
+	# 3. 容器：严格 JSON、键集合固定、16384 字节上限；旧格式给明确错误码
+	var container := parse_container(container_bytes)
+	if not container["ok"]:
+		return _fail_detail(r, String(container["code"]), String(container["detail"]))
+
+	# 4. (a) 中控证书：内置厂商公钥验签
+	var control := Verifier.verify_envelope_text(
+		String(container["control"]), VendorKey.VENDOR_PUBLIC_KEY, "vendor-control"
 	)
 	if not control["ok"]:
 		return _fail_detail(r, ERR_CONTROL_INVALID, String(control["detail"]))
 	var control_payload: Dictionary = control["payload"]
 	r.control_id = String(control_payload["license_id"])
 
-	# 4. 中控证书时间窗口与项目范围
+	# 5. 证书时间窗口（协议 §4：issued_at / expires_at 必须合法）
 	var control_issued := _parse_utc(String(control_payload["issued_at"]))
 	var control_expires := _parse_utc(String(control_payload["expires_at"]))
 	if control_issued < 0 or control_expires < 0:
 		return _fail_detail(r, ERR_CONTROL_INVALID, "timestamp_invalid")
 	if control_issued > now + CLOCK_SKEW or now >= control_expires:
 		return _fail(r, ERR_CONTROL_TIME)
-	if not Verifier.is_project_allowed(control_payload, pc):
-		return _fail(r, ERR_PROJECT_MISMATCH)
 
-	# 5. 子机授权：用证书内的委托公钥验签
-	var license_path_value := license_path()
-	var license_bytes := _read_bytes(license_path_value)
-	if license_bytes.is_empty():
-		if not FileAccess.file_exists(license_path_value):
-			return _fail(r, ERR_LICENSE_MISSING)
-		return _fail(r, ERR_LICENSE_EMPTY)
+	# 6. (b) 子机授权：用证书内的委托公钥验签
 	var delegated: Dictionary = control_payload["delegated_public_key"]
-	var machine := Verifier.verify_envelope_bytes(license_bytes, delegated, "machine-license")
+	var machine := Verifier.verify_envelope_text(String(container["license"]), delegated, "machine-license")
 	if not machine["ok"]:
 		return _fail_detail(r, ERR_LICENSE_INVALID, String(machine["detail"]))
 	var machine_payload: Dictionary = machine["payload"]
@@ -262,17 +409,23 @@ static func evaluate(update_record: bool = true) -> Dictionary:
 	r.issue = String(machine_payload["issued_at"])
 	r.expire = String(machine_payload["expires_at"])
 
-	# 6. 绑定关系：中控证书 ID、项目、设备、状态
-	if String(machine_payload["control_license_id"]) != String(control_payload["license_id"]):
-		return _fail(r, ERR_CONTROL_ID_MISMATCH)
-	if String(machine_payload["project_id"]) != pc:
-		return _fail(r, ERR_PROJECT_MISMATCH)
+	# 7. (c) 设备绑定
 	if String(machine_payload["device_id"]) != device:
 		return _fail(r, ERR_DEVICE_MISMATCH)
+
+	# 8. (d) 项目绑定：授权项目必须等于本机，且本机在证书范围内
+	if String(machine_payload["project_id"]) != pc:
+		return _fail(r, ERR_PROJECT_MISMATCH)
+	if not Verifier.is_project_allowed(control_payload, pc):
+		return _fail(r, ERR_PROJECT_MISMATCH)
+
+	# 9. 证书归属与状态（协议 §8 第 5 步）
+	if String(machine_payload["control_license_id"]) != String(control_payload["license_id"]):
+		return _fail(r, ERR_CONTROL_ID_MISMATCH)
 	if String(machine_payload["status"]) != "active":
 		return _fail(r, ERR_STATUS_INACTIVE)
 
-	# 7. 有效期：顺序、未来签发、不得超出中控证书
+	# 10. (e) 子机授权有效期不得超过中控证书；时间戳顺序与未来签发一并检查
 	var issued := _parse_utc(r.issue)
 	var expires := _parse_utc(r.expire)
 	if issued < 0 or expires < 0:
@@ -284,7 +437,7 @@ static func evaluate(update_record: bool = true) -> Dictionary:
 	if expires > control_expires:
 		return _fail(r, ERR_OUT_OF_CONTROL_WINDOW)
 
-	# 8. 防回拨（保留旧版行为）与到期判断
+	# 11. 防回拨（保留旧版行为）与 (f) 当前时间必须早于到期时间
 	if not _clock_ok(update_record):
 		return _fail(r, ERR_CLOCK_ROLLBACK)
 	if now >= expires:

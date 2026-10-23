@@ -16,6 +16,18 @@ export const RSA_MIN_EXPONENT = 65537
 export const RSA_MAX_EXPONENT_UPPER_BOUND = 2 ** 32
 export const CLOCK_SKEW_MS = 5 * 60 * 1000
 
+/**
+ * 「买断/永久」授权的到期年限：99 年。
+ * assertTimeWindow 的硬上限是 100 年（payload_invalid），统一用 99 年留出余量，严禁顶边界。
+ */
+export const PERPETUAL_EXPIRY_YEARS = 99
+const YEAR_MS = 365 * 24 * 60 * 60 * 1000
+
+/** 从给定时刻计算「买断/永久」到期时间（UTC 秒精度字符串，与协议时间格式一致） */
+export function perpetualExpiryFrom(nowMs: number): string {
+  return `${new Date(nowMs + PERPETUAL_EXPIRY_YEARS * YEAR_MS).toISOString().slice(0, 19)}Z`
+}
+
 /** 子机提前多久开始尝试续期（秒）。编译期常量，不来自授权文件。 */
 export const RENEW_WINDOW_SECONDS = 30 * 24 * 60 * 60
 /** 临期窗口内后台拉取间隔（秒） */
@@ -53,7 +65,7 @@ export interface LicenseEnvelope {
 /**
  * 中控授权证书（厂商签发）。
  * `expires_at` 是厂商放行的授权上限，任何子机授权的 `expires_at` 都不得晚于它。
- * 不区分试用/正式：试用 = 15 天，买断 = 100 年。
+ * 不区分试用/正式：试用 = 15 天，买断 = 99 年（见 PERPETUAL_EXPIRY_YEARS）。
  */
 export interface VendorControlPayload {
   readonly schema_version: number

@@ -1,5 +1,5 @@
 # 自动生成，请勿手工修改。
-# 源文件：desktop/verifier-godot/aegis_rsa_verify.gd
+# 源文件：tests/integration/verifier-godot/aegis_rsa_verify.gd
 # 重新生成：cd desktop && npm run godot:sync
 extends RefCounted
 ##

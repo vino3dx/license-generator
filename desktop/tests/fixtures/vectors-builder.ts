@@ -140,7 +140,6 @@ export function buildVectors(): VectorsFile {
       expiresAt: '2027-10-01T00:00:00Z',
       projectIds: ['proj-alpha', 'proj-beta'],
       maxDevices: 50,
-      features: ['device.lock', 'license.issue'],
       delegatedPublicKey: validatePublicKeyParams(keys.delegate.public)
     },
     vendorKey
@@ -155,7 +154,7 @@ export function buildVectors(): VectorsFile {
       issuedAt: '2026-10-22T00:00:00Z',
       expiresAt: '2027-01-20T00:00:00Z',
       status: 'active',
-      features: ['device.lock']
+      controlCertificate: vendorCert.envelope
     },
     delegateKey
   )

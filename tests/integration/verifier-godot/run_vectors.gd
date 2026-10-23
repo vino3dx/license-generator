@@ -33,7 +33,7 @@ func _init() -> void:
 func _find_vectors() -> String:
 	if FileAccess.file_exists("res://vectors.json"):
 		return "res://vectors.json"
-	var external := ProjectSettings.globalize_path("res://") + "../tests/fixtures/vectors.json"
+	var external := ProjectSettings.globalize_path("res://") + "../../vectors/vectors.json"
 	if FileAccess.file_exists(external):
 		return external
 	return ""

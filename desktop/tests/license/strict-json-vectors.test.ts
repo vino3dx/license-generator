@@ -7,7 +7,7 @@ import { parseStrictJson } from '@core/license/strict-json'
 
 /**
  * 与 GDScript 共用的严格 JSON 向量。
- * 同一份 tests/fixtures/strict-json-cases.json 也会被 verifier-godot/strict_json_runner.gd 读取，
+ * 同一份 tests/vectors/strict-json-cases.json 也会被 tests/integration/verifier-godot/strict_json_runner.gd 读取，
  * 两端必须得出相同的 ok/失败结论。
  */
 interface JsonCase {
@@ -29,7 +29,7 @@ interface Fixture {
   readonly utf8_cases: readonly Utf8Case[]
 }
 
-const fixturePath = fileURLToPath(new URL('../fixtures/strict-json-cases.json', import.meta.url))
+const fixturePath = fileURLToPath(new URL('../../../tests/vectors/strict-json-cases.json', import.meta.url))
 const fixture = JSON.parse(readFileSync(fixturePath, 'utf8')) as Fixture
 
 function tryParse(text: string): { ok: boolean; value?: unknown } {

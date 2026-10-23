@@ -2,6 +2,7 @@ import { createHash, randomBytes } from 'node:crypto'
 import type { KeyObject } from 'node:crypto'
 import {
   countBoundDevices,
+  deactivateControlCertificate,
   deleteLicense,
   findCurrentLicense,
   insertLicense,
@@ -35,6 +36,8 @@ const DAY_MS = 24 * 60 * 60 * 1000
 interface PreparedLicense {
   readonly license: LicenseDto
   readonly envelope: string
+  /** 签发时所用的中控证书信封：payload 的 control_cert 与容器 control 用同一份 */
+  readonly controlEnvelope: string
   /** 提交前该设备当前的授权 ID，成功后标记为 superseded_by */
   readonly supersedes: string | null
 }
@@ -171,7 +174,8 @@ function prepareBatch(
         issuedAt: at,
         expiresAt,
         status: 'active',
-        features: []
+        // 协议 v3：子机授权 payload 内嵌中控证书，使 license.dat 自包含
+        controlCertificate: certificateForIssue.record.envelope
       },
       delegatedKey
     )
@@ -179,6 +183,7 @@ function prepareBatch(
     const existing = findCurrentLicense(deps.database, projectId, deviceId)
     prepared.push({
       envelope: issued.envelope,
+      controlEnvelope: certificateForIssue.record.envelope,
       supersedes: existing?.licenseId ?? null,
       license: {
         licenseId,
@@ -231,8 +236,8 @@ function commitPrepared(
   const writtenFiles: string[] = []
   try {
     for (const item of prepared) {
-      // license.dat 使用容器格式：内嵌当前 control.cert（约定 v3.1 §3），裸信封不再分发
-      const container = buildLicenseContainer(item.envelope, certificate.record.envelope)
+      // license.dat 使用容器格式：内嵌签发时校验过的 control.cert（约定 v3.1 §2），裸信封不再分发
+      const container = buildLicenseContainer(item.envelope, item.controlEnvelope)
       deps.files.writeAtomic(item.license.fileName, container)
       writtenFiles.push(item.license.fileName)
     }
@@ -291,6 +296,18 @@ function commitPrepared(
         context: JSON.stringify({ count: prepared.length })
       })
     }
+    // 一次性证书（用户 2026-10-23 决策）：签发成功后证书立即作废，再次签发必须导入新证书。
+    // 与文件、记录放在同一事务：要么都成功，要么整体回滚，不会出现"证书作废但授权没写"。
+    deactivateControlCertificate(deps.database, certificate.payload.license_id)
+    writeAudit(deps, {
+      at,
+      action: 'control_certificate_consume',
+      targetType: 'control-certificate',
+      targetId: certificate.payload.license_id,
+      result: 'success',
+      errorCode: null,
+      context: JSON.stringify({ issuedLicenses: prepared.length })
+    })
     })
   } catch (error) {
     // 数据库提交失败：文件已经落盘，按相反顺序补偿，避免出现"有文件没记录"的授权

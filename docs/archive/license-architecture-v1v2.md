@@ -1,4 +1,4 @@
-# Aegis 授权体系：结构与使用流程
+﻿# Aegis 授权体系：结构与使用流程
 
 > 状态：**设计稿，未实现**。基于 2026-10-22 讨论整理。
 > 协议细节见 [`desktop/docs/license-protocol.md`](../desktop/docs/license-protocol.md)，

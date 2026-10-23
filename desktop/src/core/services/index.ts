@@ -21,7 +21,7 @@ import {
   unbindDevice,
   updateProject
 } from './catalog'
-import { importControlCertificate, loadVerifiedControlCertificate, toControlCertificateDto } from './control'
+import { importControlCertificate, loadLatestControlCertificate, loadVerifiedControlCertificate, toControlCertificateDto } from './control'
 import { getDelegatedKeyStatus, importDelegatedKey } from './key-admin'
 import { resolveDependencies, type ResolvedDependencies, type ServiceDependencies } from './context'
 import {
@@ -54,6 +54,8 @@ export interface LicenseServices {
   readonly control: {
     importCertificate(envelopeText: string): ControlCertificateDto
     current(): ControlCertificateDto | null
+    /** 最近导入的证书（含已作废），供界面提示一次性证书状态 */
+    last(): ControlCertificateDto | null
     quota(): QuotaUsageDto
   }
   readonly licensing: {
@@ -109,6 +111,7 @@ export function createLicenseServices(dependencies: ServiceDependencies): Licens
           return null
         }
       },
+      last: () => loadLatestControlCertificate(deps),
       quota: () => getQuotaUsage(deps)
     },
     licensing: {

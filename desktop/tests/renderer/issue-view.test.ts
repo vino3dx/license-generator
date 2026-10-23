@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { flushPromises, mount, type DOMWrapper, type VueWrapper } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { IpcResult } from '@shared/license/service-contract'
+import type { DeviceDto, IpcResult } from '@shared/license/service-contract'
 import IssueView from '@renderer/views/IssueView.vue'
+import { localInputToUtc } from '@renderer/lib/format'
 
 function ok<T>(value: T): IpcResult<T> {
   return { ok: true, value }
@@ -23,6 +24,17 @@ const device = {
   lockedAt: null,
   unbindAt: null
 } as const
+
+const deviceB = {
+  projectId: 'proj-a',
+  deviceId: 'DEV-9a8b7c6d5e4f3210',
+  registeredAt: '2026-10-22T06:00:00Z',
+  locked: false,
+  lockedAt: null,
+  unbindAt: null
+} as const
+
+let deviceList: DeviceDto[] = [device]
 
 const certificate = {
   licenseId: 'VND-TEST-0001',
@@ -55,6 +67,7 @@ let api: Record<string, ReturnType<typeof vi.fn>>
 
 beforeEach(() => {
   vendorConfigured = true
+  deviceList = [device]
   api = {
     listProjects: vi.fn(async () => ok([project])),
     currentControlCertificate: vi.fn(async () => ok(certificate)),
@@ -63,7 +76,7 @@ beforeEach(() => {
     delegatedKeyStatus: vi.fn(async () =>
       ok({ configured: true, matchesControl: true, location: 'keys/delegated.key.pem' })
     ),
-    listDevices: vi.fn(async () => ok([device])),
+    listDevices: vi.fn(async () => ok(deviceList)),
     issueLicense: vi.fn(async () => ok(license)),
     issueLicensesBatch: vi.fn(async () => ok({ issued: [license] })),
     renewLicense: vi.fn(async () => ok(license)),
@@ -137,6 +150,45 @@ describe('授权签发页面', () => {
     const wrapper = mount(IssueView)
     await flushPromises()
 
+    const button = findIssueButton(wrapper)
+    expect(button?.attributes('disabled')).toBeDefined()
+    expect(api['issueLicense']).not.toHaveBeenCalled()
+  })
+
+  it('多台设备走批量签发，并携带自定义到期时间', async () => {
+    deviceList = [device, deviceB]
+    const wrapper = mount(IssueView)
+    await flushPromises()
+
+    const checkboxes = wrapper.findAll('input[type="checkbox"]')
+    expect(checkboxes.length).toBe(2)
+    await checkboxes[0]!.setValue(true)
+    await checkboxes[1]!.setValue(true)
+    await wrapper.find('input[type="datetime-local"]').setValue('2026-11-11T08:00')
+
+    const button = wrapper
+      .findAll('button')
+      .find((button) => button.text().includes('批量签发'))
+    expect(button).toBeDefined()
+    await button!.trigger('click')
+    await flushPromises()
+
+    expect(api['issueLicensesBatch']).toHaveBeenCalledTimes(1)
+    expect(api['issueLicensesBatch']).toHaveBeenCalledWith({
+      projectId: 'proj-a',
+      deviceIds: [device.deviceId, deviceB.deviceId],
+      expiresAt: localInputToUtc('2026-11-11T08:00')
+    })
+  })
+
+  it('中控证书已过期时禁用签发并给出原因', async () => {
+    api['currentControlCertificate']!.mockResolvedValue(
+      ok({ ...certificate, expiresAt: '2026-01-01T00:00:00Z' })
+    )
+    const wrapper = mount(IssueView)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('中控证书已过期，不能继续签发')
     const button = findIssueButton(wrapper)
     expect(button?.attributes('disabled')).toBeDefined()
     expect(api['issueLicense']).not.toHaveBeenCalled()

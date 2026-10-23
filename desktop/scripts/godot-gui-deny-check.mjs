@@ -1,16 +1,14 @@
 #!/usr/bin/env node
-// 非 headless 下的失败拦截检查（会短暂打开一个 Godot 窗口）。
+// 非 headless 下的静默拦截检查（2026-10-23 起插件已无任何提示界面，本脚本取代旧的门控界面检查）。
 //
-// 覆盖三条只在 GUI 模式成立的路径：
-// 1. 授权失败后弹窗出现，标题与错误码可读；
-// 2. 重复触发授权失败不会重复创建弹窗（POPUP_COUNT_AFTER_RETRY 仍为 1）；
-// 3. 弹窗节点异常（被销毁 / 无法显示）时，watchdog 在 5 秒宽限期后仍以 exit code 1 退出。
+// 覆盖两条只在 GUI 模式成立的路径（headless 分支由 vitest 的 godot-deny-path.test.ts 覆盖）：
+// 1. 无授权 + 测试公钥：程序静默退出码 1——无弹窗、无界面、无任何插件输出，且快速退出不挂起；
+// 2. 有效授权（测试密钥手签容器放到工程根目录）：进程不被拦截，持续运行（由超时终止证明），
+//    同样没有任何插件输出。
 //
-// 另有 --hold 模式：弹窗一直显示且不关闭时，进程不会在宽限期内被提前杀掉，
-// 用来验证 watchdog 不会打断用户阅读错误码。
-//
-// 用法：GODOT_BIN=".../Godot_v4.6.3-stable_win64_console.exe" node scripts/godot-gui-deny-check.mjs [--hold]
+// 用法：GODOT_BIN=".../Godot_v4.6.3-stable_win64_console.exe" node scripts/godot-gui-deny-check.mjs
 import { spawnSync } from 'node:child_process'
+import { constants, createHash, createPublicKey, createSign } from 'node:crypto'
 import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -21,10 +19,76 @@ if (!godotBin || !existsSync(godotBin)) {
   process.exit(2)
 }
 
-const hold = process.argv.includes('--hold')
+const DAY = 24 * 60 * 60 * 1000
 const source = join(process.cwd(), '..', 'godot')
-const workDir = mkdtempSync(join(tmpdir(), 'aegis-gui-deny-'))
+const keyDir = join(process.cwd(), 'tests', 'fixtures', 'keys')
+const workDir = mkdtempSync(join(tmpdir(), 'aegis-gui-silent-'))
 const projectDir = join(workDir, 'project')
+const projectName = `aegis-silent-${process.pid}`
+
+const vendorPem = readFileSync(join(keyDir, 'vendor-test.private.pem'), 'utf8')
+const delegatePem = readFileSync(join(keyDir, 'delegate-test.private.pem'), 'utf8')
+
+function b64url(buffer) {
+  return Buffer.from(buffer).toString('base64url')
+}
+
+function iso(offsetMs) {
+  return `${new Date(Date.now() + offsetMs).toISOString().slice(0, 19)}Z`
+}
+
+function envelope(payloadText, licenseType, pem) {
+  const payloadBytes = Buffer.from(payloadText, 'utf8')
+  const signature = createSign('RSA-SHA256')
+    .update(payloadBytes)
+    .sign({ key: pem, padding: constants.RSA_PKCS1_PADDING })
+  const kid = b64url(createHash('sha256').update(createPublicKey(pem).export({ type: 'spki', format: 'der' })).digest())
+  return JSON.stringify({
+    aegis: 'license-envelope',
+    schema_version: 1,
+    license_type: licenseType,
+    alg: 'RS256',
+    kid,
+    payload: b64url(payloadBytes),
+    signature: b64url(signature)
+  })
+}
+
+function buildContainer(projectCode, deviceId) {
+  const delegatedJwk = createPublicKey(delegatePem).export({ format: 'jwk' })
+  const control = envelope(
+    JSON.stringify({
+      schema_version: 1,
+      license_type: 'vendor-control',
+      license_id: 'VND-SILENT-0001',
+      issued_at: iso(-DAY),
+      expires_at: iso(365 * DAY),
+      project_ids: [projectCode],
+      max_devices: 10,
+      features: [],
+      delegated_public_key: { kty: 'RSA', n: delegatedJwk.n, e: delegatedJwk.e }
+    }),
+    'vendor-control',
+    vendorPem
+  )
+  const license = envelope(
+    JSON.stringify({
+      schema_version: 1,
+      license_type: 'machine-license',
+      license_id: 'MCH-SILENT-0001',
+      control_license_id: 'VND-SILENT-0001',
+      project_id: projectCode,
+      device_id: deviceId,
+      issued_at: iso(-3600 * 1000),
+      expires_at: iso(90 * DAY),
+      status: 'active',
+      features: []
+    }),
+    'machine-license',
+    delegatePem
+  )
+  return JSON.stringify({ v: 1, license, control })
+}
 
 cpSync(source, projectDir, {
   recursive: true,
@@ -34,77 +98,102 @@ cpSync(source, projectDir, {
   }
 })
 
-const probe = `extends Node
+// 写入测试厂商公钥（仅本临时副本；生产插件必须保持空占位）
+const jwk = createPublicKey(vendorPem).export({ format: 'jwk' })
+writeFileSync(
+  join(projectDir, 'addons', 'aegis', 'aegis_vendor_key.gd'),
+  `extends RefCounted
+const VENDOR_PUBLIC_KEY := {
+	"kty": "RSA",
+	"n": "${jwk.n}",
+	"e": "${jwk.e}"
+}
 
-
-func _ready() -> void:
-	await get_tree().create_timer(2.0).timeout
-	print("POPUP_COUNT=" + str(_count()))
-	for child in get_tree().root.get_children():
-		if child is AcceptDialog:
-			print("POPUP_TITLE=" + child.title)
-			print("POPUP_TEXT=" + child.dialog_text.replace("\\n", " | "))
-	var guard = get_node_or_null("/root/Aegis")
-	for _i in range(5):
-		guard._check()
-	await get_tree().process_frame
-	await get_tree().process_frame
-	print("POPUP_COUNT_AFTER_RETRY=" + str(_count()))
-	if ${hold ? 'true' : 'false'}:
-		await get_tree().create_timer(6.0).timeout
-		print("STILL_ALIVE=" + str(_count()))
-		return
-	for child in get_tree().root.get_children():
-		if child is AcceptDialog:
-			child.queue_free()
-	print("POPUP_DESTROYED")
-
-
-func _count() -> int:
-	var total := 0
-	for child in get_tree().root.get_children():
-		if child is AcceptDialog:
-			total += 1
-	return total
-`
-writeFileSync(join(projectDir, 'deny_probe.gd'), probe, 'utf8')
-
-const projectFile = join(projectDir, 'project.godot')
-const projectText = readFileSync(projectFile, 'utf8').replace(
-  'Aegis="*res://addons/aegis/aegis.gd"',
-  'Aegis="*res://addons/aegis/aegis.gd"\nDenyProbe="*res://deny_probe.gd"'
+static func is_configured() -> bool:
+	var modulus = VENDOR_PUBLIC_KEY.get("n", "")
+	return typeof(modulus) == TYPE_STRING and not String(modulus).is_empty()
+`,
+  'utf8'
 )
-writeFileSync(projectFile, projectText, 'utf8')
 
-const timeout = hold ? 14_000 : 20_000
+const baseProject = `config_version=5
+
+[application]
+
+config/name="${projectName}"
+run/main_scene="res://main.tscn"
+config/features=PackedStringArray("4.6", "Forward Plus")
+
+[autoload]
+
+Aegis="*res://addons/aegis/aegis.gd"
+`
+writeFileSync(join(projectDir, 'project.godot'), baseProject, 'utf8')
+
+// 用编辑器二进制取项目 ID / 设备 ID（临时去掉 autoload，避免守卫先拦截退出）
+const projectFile = join(projectDir, 'project.godot')
+const discoverProbe = join(projectDir, 'discover.gd')
+writeFileSync(
+  discoverProbe,
+  `extends SceneTree
+const License := preload("res://addons/aegis/aegis_license.gd")
+const Device := preload("res://addons/aegis/aegis_device.gd")
+
+
+func _init() -> void:
+	var pc := License.project_code()
+	print("PROJECT=" + pc)
+	print("DEVICE=" + Device.device_id(pc))
+	quit(0)
+`,
+  'utf8'
+)
+writeFileSync(projectFile, baseProject.replace('Aegis="*res://addons/aegis/aegis.gd"\n', ''), 'utf8')
+const discover = spawnSync(godotBin, ['--headless', '--path', projectDir, '-s', 'discover.gd'], {
+  encoding: 'utf8',
+  timeout: 60_000
+})
+writeFileSync(projectFile, baseProject, 'utf8')
+const discoverOutput = `${discover.stdout ?? ''}\n${discover.stderr ?? ''}`
+const projectCode = discoverOutput.match(/PROJECT=(\S+)/)?.[1]
+const deviceId = discoverOutput.match(/DEVICE=(\S+)/)?.[1]
+if (!projectCode || !deviceId) {
+  console.error('无法读取项目 ID / 设备 ID：\n' + discoverOutput)
+  process.exit(2)
+}
+
+// 场景 1：无授权 → 静默退出码 1
+const denied = spawnSync(godotBin, ['--path', projectDir], { encoding: 'utf8', timeout: 20_000 })
+const deniedOutput = `${denied.stdout ?? ''}\n${denied.stderr ?? ''}`
+
+// 场景 2：有效授权（测试密钥手签容器放工程根目录）→ 不拦截、持续运行（由超时终止证明）
+writeFileSync(join(projectDir, 'license.dat'), buildContainer(projectCode, deviceId), 'utf8')
 const started = Date.now()
-const result = spawnSync(godotBin, ['--path', projectDir], { encoding: 'utf8', timeout })
-const elapsedMs = Date.now() - started
-const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`
-console.log(output.trim())
+const licensed = spawnSync(godotBin, ['--path', projectDir], { encoding: 'utf8', timeout: 8_000 })
+const licensedElapsed = Date.now() - started
+const licensedOutput = `${licensed.stdout ?? ''}\n${licensed.stderr ?? ''}`
 
 const checks = {
-  denied: /\[Aegis\] 授权校验失败 \(Err: 0x062\)/.test(output),
-  popupFound: /POPUP_COUNT=1\b/.test(output),
-  popupTitle: /POPUP_TITLE=授权校验失败/.test(output),
-  popupCode: /POPUP_TEXT=.*0x062/.test(output),
-  noDuplicate: /POPUP_COUNT_AFTER_RETRY=1\b/.test(output)
+  denied_exit_1: denied.status === 1,
+  denied_silent: !/\[Aegis\]|授权/.test(deniedOutput),
+  licensed_not_denied: licensed.status !== 1,
+  licensed_running: licensed.status === null,
+  licensed_silent: !/\[Aegis\]|授权/.test(licensedOutput),
+  no_script_error: !/SCRIPT ERROR|Parse Error/.test(deniedOutput + licensedOutput)
 }
 
-if (hold) {
-  checks.stillAlive = /STILL_ALIVE=1\b/.test(output)
-  checks.notKilledByWatchdog = result.status === null && elapsedMs >= 11_000
-} else {
-  checks.destroyed = /POPUP_DESTROYED/.test(output)
-  checks.exitCode = result.status === 1
-  checks.watchdogFired = elapsedMs >= 4_000 && elapsedMs <= 15_000
-}
-
-console.log('\nRESULT', JSON.stringify({ ...checks, elapsedMs, status: result.status }))
+console.log(
+  '场景 1（无授权）:',
+  JSON.stringify({ status: denied.status, signal: denied.signal })
+)
+console.log(
+  '场景 2（有效授权）:',
+  JSON.stringify({ status: licensed.status, signal: licensed.signal, elapsedMs: licensedElapsed })
+)
+console.log('\nRESULT', JSON.stringify(checks))
 try {
   rmSync(workDir, { recursive: true, force: true })
 } catch {
-  // --hold 模式下进程是被外部杀掉的，临时目录可能短暂被占用，交给系统回收即可
   console.log('（临时目录暂未清理：' + workDir + '）')
 }
 

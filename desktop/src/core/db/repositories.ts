@@ -343,6 +343,20 @@ export function findActiveControlCertificate(database: SqliteDatabase): ControlC
   return row === null ? null : mapControlCertificate(row)
 }
 
+/**
+ * 最近导入的一张证书（不论是否作废）。
+ * 一次性证书规则下，签发成功后证书被置为 inactive；界面需要据此提示"证书已作废"。
+ */
+export function findLatestControlCertificate(database: SqliteDatabase): ControlCertificateRecord | null {
+  const row = getOne(database, 'SELECT * FROM control_certificates ORDER BY imported_at DESC, rowid DESC LIMIT 1')
+  return row === null ? null : mapControlCertificate(row)
+}
+
+/** 证书一次性规则：签发成功后置为 inactive，后续签发必须导入新证书 */
+export function deactivateControlCertificate(database: SqliteDatabase, licenseId: string): void {
+  runStatement(database, 'UPDATE control_certificates SET is_active = 0 WHERE license_id = ?', licenseId)
+}
+
 export function findControlCertificateById(
   database: SqliteDatabase,
   licenseId: string

@@ -25,6 +25,7 @@ const api: AegisApi = {
       ipcRenderer.invoke(LICENSE_IPC_CHANNELS.controlImport, envelopeText),
     pickControlCertificateFile: () => ipcRenderer.invoke(LICENSE_IPC_CHANNELS.controlPickFile),
     currentControlCertificate: () => ipcRenderer.invoke(LICENSE_IPC_CHANNELS.controlCurrent),
+    lastControlCertificate: () => ipcRenderer.invoke(LICENSE_IPC_CHANNELS.controlLast),
     quota: () => ipcRenderer.invoke(LICENSE_IPC_CHANNELS.quotaUsage),
 
     delegatedKeyStatus: () => ipcRenderer.invoke(LICENSE_IPC_CHANNELS.delegatedKeyStatus),

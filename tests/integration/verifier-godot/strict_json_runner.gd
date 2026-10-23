@@ -1,9 +1,9 @@
 extends SceneTree
 ##
 ## 严格 JSON 共享向量的 Godot 侧执行入口：
-##   godot --headless --path verifier-godot -s strict_json_runner.gd
+##   godot --headless --path tests/integration/verifier-godot -s strict_json_runner.gd
 ##
-## 读取与 Node 端相同的 tests/fixtures/strict-json-cases.json，
+## 读取与 Node 端相同的 tests/vectors/strict-json-cases.json，
 ## 逐条比对细粒度错误码，任何不一致都以非零退出码结束。
 
 const StrictJson = preload("res://aegis_strict_json.gd")
@@ -74,7 +74,7 @@ func _run_utf8_cases(cases: Array) -> void:
 func _find_fixture() -> String:
 	if FileAccess.file_exists("res://strict-json-cases.json"):
 		return "res://strict-json-cases.json"
-	var external := ProjectSettings.globalize_path("res://") + "../tests/fixtures/strict-json-cases.json"
+	var external := ProjectSettings.globalize_path("res://") + "../../vectors/strict-json-cases.json"
 	if FileAccess.file_exists(external):
 		return external
 	return ""

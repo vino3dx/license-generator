@@ -18,6 +18,8 @@ export const LICENSE_CONTAINER_MAX_BYTES = 16384
 export const LICENSE_CONTAINER_VERSION = 1
 
 const CONTAINER_KEYS = ['v', 'license', 'control'] as const
+/** 严格键集合校验用排序副本：Object.keys().sort() 后与字典序比较 */
+const CONTAINER_KEYS_SORTED = [...CONTAINER_KEYS].sort()
 
 export interface LicenseContainer {
   readonly license: string
@@ -43,7 +45,10 @@ export function parseLicenseContainer(bytes: Uint8Array): LicenseContainer {
     throw new LicenseError('container_malformed', '授权容器必须是 JSON 对象')
   }
   const keys = Object.keys(parsed).sort()
-  if (keys.length !== CONTAINER_KEYS.length || !CONTAINER_KEYS.every((key, index) => keys[index] === key)) {
+  if (
+    keys.length !== CONTAINER_KEYS_SORTED.length ||
+    !CONTAINER_KEYS_SORTED.every((key, index) => keys[index] === key)
+  ) {
     throw new LicenseError('container_malformed', '授权容器必须恰好包含 v / license / control')
   }
   const record = parsed as Record<string, unknown>

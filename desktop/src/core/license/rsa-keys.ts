@@ -1,4 +1,4 @@
-import { createHash, createPrivateKey, createPublicKey, type KeyObject } from 'node:crypto'
+import { createHash, createPrivateKey, createPublicKey, generateKeyPairSync, type KeyObject } from 'node:crypto'
 import {
   PUBLIC_KEY_KEYS,
   RSA_MAX_EXPONENT_UPPER_BOUND,
@@ -30,6 +30,21 @@ export function loadPrivateKeyFromPem(pem: string): KeyObject {
 
 export function derivePublicKey(privateKey: KeyObject): KeyObject {
   return createPublicKey(privateKey)
+}
+
+/** 生成协议强度要求的 RSA-2048 私钥（厂商根密钥与委托私钥共用，固定 e=65537） */
+export function generateRsaPrivateKey(): KeyObject {
+  const { privateKey } = generateKeyPairSync('rsa', {
+    modulusLength: RSA_MODULUS_BYTES * 8,
+    publicExponent: 0x10001
+  })
+  assertPrivateKeyStrength(privateKey)
+  return privateKey
+}
+
+/** 导出 PKCS#1 PEM 文本，供落盘保存与 P1 中控导入 */
+export function exportPrivateKeyPem(privateKey: KeyObject): string {
+  return privateKey.export({ type: 'pkcs1', format: 'pem' }).toString()
 }
 
 export function exportPublicKeyParams(publicKey: KeyObject): RsaPublicKeyParams {

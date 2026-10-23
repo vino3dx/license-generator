@@ -23,7 +23,7 @@ export interface AppInfo {
   readonly userDataPath: string
 }
 
-export type WorkspaceKey = 'projects' | 'devices' | 'issue' | 'records'
+export type WorkspaceKey = 'license' | 'records'
 
 export interface WorkspaceEntry {
   readonly key: WorkspaceKey
@@ -31,10 +31,8 @@ export interface WorkspaceEntry {
   readonly summary: string
 }
 
-/** 主界面四个入口，界面与后续路由/权限共用同一份定义 */
+/** 主界面两个入口，界面与后续路由/权限共用同一份定义 */
 export const WORKSPACE_ENTRIES: readonly WorkspaceEntry[] = [
-  { key: 'projects', title: '项目管理', summary: '维护项目 ID、项目范围与授权额度' },
-  { key: 'devices', title: '设备管理', summary: '登记子机设备、所属项目与锁定状态' },
-  { key: 'issue', title: '授权签发', summary: '单台或批量签发、续期子机授权' },
-  { key: 'records', title: '签发记录', summary: '签发结果、操作者与审计日志' }
+  { key: 'license', title: '授权管理', summary: '导入中控证书 → 登记设备 → 签发授权' },
+  { key: 'records', title: '日志信息', summary: '签发结果、证书作废与审计日志' }
 ] as const

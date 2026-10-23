@@ -2,6 +2,7 @@ import { createPublicKey, type KeyObject } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { exportPublicKeyParams, loadPrivateKeyFromPem } from '@core/license/rsa-keys'
+import { issueVendorCertificate } from '@core/license/vendor-license'
 import type { MachineLicenseInput, VendorCertificateInput } from '@core/license/payloads'
 
 export type TestKeyName = 'vendor-test' | 'delegate-test' | 'rogue-test'
@@ -26,7 +27,6 @@ export function makeVendorInput(overrides: Partial<VendorCertificateInput> = {})
     expiresAt: '2027-10-01T00:00:00Z',
     projectIds: ['proj-alpha', 'proj-beta'],
     maxDevices: 50,
-    features: ['device.lock', 'license.issue'],
     delegatedPublicKey: requireDelegatePublicParams(),
     ...overrides
   }
@@ -41,7 +41,8 @@ export function makeMachineInput(overrides: Partial<MachineLicenseInput> = {}): 
     issuedAt: '2026-10-22T00:00:00Z',
     expiresAt: '2027-01-20T00:00:00Z',
     status: 'active',
-    features: ['device.lock'],
+    // 协议 v3：payload 必须内嵌中控证书；默认用 makeVendorInput 的默认证书（与 chain.test 一致）
+    controlCertificate: issueVendorCertificate(makeVendorInput(), loadTestPrivateKey('vendor-test')).envelope,
     ...overrides
   }
 }

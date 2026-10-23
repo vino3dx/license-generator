@@ -149,6 +149,7 @@ export const LICENSE_IPC_CHANNELS = {
   controlImport: 'license:control-import',
   controlPickFile: 'license:control-pick-file',
   controlCurrent: 'license:control-current',
+  controlLast: 'license:control-last',
   quotaUsage: 'license:quota-usage',
   delegatedKeyStatus: 'license:delegated-key-status',
   delegatedKeyImport: 'license:delegated-key-import',

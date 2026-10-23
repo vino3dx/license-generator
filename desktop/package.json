@@ -19,7 +19,8 @@
     "godot:strict": "node scripts/godot-strict.mjs",
     "godot:sync": "node scripts/sync-godot-addon.mjs",
     "strict:cases": "node scripts/build-strict-json-cases.mjs",
-    "test:godot-integration": "vitest run tests/integration/godot-real-license.test.ts",
+    "master:issue": "node --import ./scripts/lib/ts-alias.mjs ../tools/master-issuer/master-issuer.mts",
+    "test:godot-integration": "vitest run tests/integration",
     "smoke": "node scripts/electron-smoke.mjs"
   },
   "dependencies": {

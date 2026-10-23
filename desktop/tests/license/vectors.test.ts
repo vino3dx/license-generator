@@ -9,7 +9,8 @@ import { importPublicKeyParams } from '@core/license/rsa-keys'
 import { buildVectors, type VectorCase, type VectorsFile } from '../fixtures/vectors-builder'
 import { loadTestPrivateKey } from '../fixtures/test-keys'
 
-const VECTOR_FILE = join(process.cwd(), 'tests', 'fixtures', 'vectors.json')
+// 跨语言协议向量放在仓库级 tests/vectors/，Node 与 Godot 共用同一份
+const VECTOR_FILE = join(process.cwd(), '..', 'tests', 'vectors', 'vectors.json')
 const keys: Record<VectorCase['key'], KeyObject> = {
   vendor: createPublicKey(loadTestPrivateKey('vendor-test')),
   delegate: createPublicKey(loadTestPrivateKey('delegate-test')),

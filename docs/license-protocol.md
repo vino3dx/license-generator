@@ -1,3 +1,104 @@
+# Aegis 授权协议（当前：v3，已冻结）
+
+> 本文件上半部分描述**当前生效**的实现：`desktop/src/shared/license/protocol.ts`、`desktop/src/core/license/container.ts`、
+> `godot/addons/aegis/aegis_license.gd`。v3 由 `.workbuddy/memory/MEMORY.md`「授权协议 v3（2026-10-22 定稿）」定稿，
+> 与本文旧章节或任何设计稿冲突时，以该记录与实际实现为准。
+>
+> **2026-10-23 工程整理未修改任何协议核心**：信封结构、字段、签名算法、设备绑定、有效期规则、UDP/TCP 约定均保持原样。
+> 下半部分保留 v1 协议原文，仅用于差异追溯。
+
+## 1. v3 与 v1 的差异
+
+| 项 | v1（已作废） | v3（当前） |
+| --- | --- | --- |
+| 协议标识 | `aegis-license/v1` | `aegis-license/v3`，`schema_version = 3` |
+| 中控证书分发 | 单独分发 `control.cert` | **内嵌**进 `license.dat`，不再单独分发 |
+| 子机授权 payload | 含 `features` 数组 | **删除 `features`**；新增 `control_cert` |
+| 交付文件 | `license.dat` = machine-license 信封 | `license.dat` = 容器 `{"v":1,"license":…,"control":…}` |
+| 买断有效期 | 未定义 | 99 年（`PERPETUAL_EXPIRY_YEARS`）；试用 = 15 天 |
+| `device_id` | 仅 `OS.get_unique_id()` | `DEV-` + `sha256(unique_id + "\|" + project_id)` 前 16 位（加盐） |
+
+## 2. 信任链
+
+```
+厂商公钥（编译期常量，P1 与 P2 各一份）
+  └─ 验证 control.cert（厂商根私钥签发）
+       └─ cert.delegated_public_key 验证 license.dat 内的 machine-license 信封（委托私钥签发）
+```
+
+- 厂商根私钥只存在于 P0（`tools/master-issuer/`）的签发环境，不进 P1 安装包、不进 P2 插件、不入 Git。
+- 委托私钥由管理员导入 P1 中控，用于签发子机授权；可被提取，属已知边界。
+
+## 3. 中控证书 payload（`vendor-control`，厂商签发）
+
+字段顺序即签名时的序列化顺序：
+
+```json
+{
+  "schema_version": 3,
+  "license_type": "vendor-control",
+  "license_id": "VND-2026-001",
+  "issued_at": "2026-10-23T00:00:00Z",
+  "expires_at": "2027-10-23T00:00:00Z",
+  "project_ids": ["proj-alpha"],
+  "max_devices": 50,
+  "delegated_public_key": { "kty": "RSA", "n": "<base64url>", "e": "AQAB" }
+}
+```
+
+- `expires_at` 是厂商放行的**授权上限**，任何子机授权的 `expires_at` 都不得晚于它。
+- `project_ids` 为 `["*"]` 表示不限项目；`max_devices` 是**证书级全局额度**（不按项目拆分）。
+
+## 4. 子机授权 payload（`machine-license`，委托私钥签发）
+
+```json
+{
+  "schema_version": 3,
+  "license_type": "machine-license",
+  "license_id": "MCH-20261023000000-ABCDEF",
+  "control_license_id": "VND-2026-001",
+  "project_id": "proj-alpha",
+  "device_id": "DEV-0123456789ABCDEF",
+  "issued_at": "2026-10-23T00:00:00Z",
+  "expires_at": "2026-11-12T00:00:00Z",
+  "status": "active",
+  "control_cert": "<base64url(control.cert 信封文本 UTF-8 字节)，无填充>"
+}
+```
+
+## 5. `license.dat` 容器
+
+严格 JSON，键集合必须恰好是 `v` / `license` / `control`，整体 ≤ 16384 字节：
+
+```json
+{ "v": 1, "license": "<machine-license 信封文本>", "control": "<control.cert 信封文本>" }
+```
+
+容器只是外层包装，两个信封一个字节都不改；旧格式（裸信封、单独 `control.cert`）一律拒绝。
+
+## 6. 子机验签顺序（任一失败 → 静默 `quit(1)`，无任何 UI）
+
+1. 容器解析：严格 JSON、键集合、大小上限；
+2. 用编译期**厂商公钥**验证内嵌 `control.cert` 的签名；
+3. 用证书内 `delegated_public_key` 验证 `license.dat` 信封签名；
+4. `device_id` 与本机派生值一致；
+5. `project_id` ∈ 证书 `project_ids`；
+6. `license.expires_at ≤ cert.expires_at`（子机自查，不能只靠中控）；
+7. 当前时间 < `license.expires_at`，并包含时间回拨检查。
+
+## 7. 交付与续期
+
+- 当前交付方式：P1 中控导出 `license.dat`，人工放到子机（编辑器=工程根，导出=exe 同目录）。
+- 局域网拉取（UDP 47820 发现 + TCP 47821 拉取）已在 P2 客户端实现；P1 侧 Hub 服务端**尚未实现**，因此续期目前仍靠人工替换文件。
+
+---
+
+---
+
+> **附录：v1 协议原文（已作废，仅作差异追溯）。** 以下内容为 v1 时期的完整协议文本，
+> 其中「单独分发 control.cert」「payload 含 features」「device_id 未加盐」等描述均已被 v3 取代，请勿据此实现。
+
+
 # Aegis 授权协议 v1（`aegis-license/v1`）
 
 本协议定义两层授权链：
