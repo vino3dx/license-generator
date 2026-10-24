@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { AdminStatusDto } from '@shared/license/admin-contract'
 import type { ControlCertificateDto, IpcResult } from '@shared/license/service-contract'
 import App from '@renderer/App.vue'
 
@@ -22,11 +23,20 @@ const certificate: ControlCertificateDto = {
 
 let currentCert: ControlCertificateDto | null
 let lastCert: ControlCertificateDto | null
+let adminStatus: AdminStatusDto
 let api: Record<string, ReturnType<typeof vi.fn>>
 
 beforeEach(() => {
   currentCert = certificate
   lastCert = null
+  adminStatus = {
+    credentialConfigured: true,
+    unlocked: true,
+    idleRemainingMs: 15 * 60 * 1000,
+    idleTimeoutMs: 15 * 60 * 1000,
+    lockedOutUntil: null,
+    remainingAttempts: 5
+  }
   api = {
     listProjects: vi.fn(async () => ok([])),
     createProject: vi.fn(async () => ok({ projectId: 'proj-a', name: 'A', status: 'active', createdAt: '2026-10-23T00:00:00Z' })),
@@ -37,6 +47,7 @@ beforeEach(() => {
     vendorKeyStatus: vi.fn(async () => ok({ configured: true })),
     delegatedKeyStatus: vi.fn(async () => ok({ configured: true, matchesControl: true, location: 'keys/delegated.key.pem' })),
     listDevices: vi.fn(async () => ok([])),
+    listLicenses: vi.fn(async () => ok([])),
     registerDevice: vi.fn(),
     unbindDevice: vi.fn(),
     lockDevice: vi.fn(),
@@ -53,6 +64,33 @@ beforeEach(() => {
   Object.defineProperty(window, 'aegis', {
     value: {
       license: api,
+      admin: {
+        status: vi.fn(async () => ok(adminStatus)),
+        setup: vi.fn(async () => ok(adminStatus)),
+        unlock: vi.fn(async () => ok(adminStatus)),
+        lock: vi.fn(async () => ok(adminStatus)),
+        changePassword: vi.fn(async () => ok(adminStatus))
+      },
+      hub: {
+        status: vi.fn(async () =>
+          ok({
+            state: 'stopped',
+            listenAddress: '127.0.0.1',
+            advertiseAddress: null,
+            udpPort: 47820,
+            tcpPort: 47821,
+            startedAt: null,
+            error: null,
+            clientSchemaSupported: false,
+            clientSchemaReason: '插件只接受 schema_version=1',
+            activeConnections: 0,
+            totalRequests: 0
+          })
+        ),
+        start: vi.fn(),
+        stop: vi.fn(),
+        requests: vi.fn(async () => ok([]))
+      },
       getAppInfo: vi.fn(async () => ({
         appName: 'aegis',
         appVersion: '0.1.0',
@@ -102,5 +140,62 @@ describe('顶部证书状态', () => {
     const wrapper = mount(App, { global: { stubs: { teleport: true } } })
     await flushPromises()
     expect(wrapper.text()).toContain('已过期或无效')
+  })
+})
+
+describe('主导航', () => {
+  it('只保留授权工作台与日志信息两个入口', async () => {
+    const wrapper = mount(App, { global: { stubs: { teleport: true } } })
+    await flushPromises()
+
+    const entries = wrapper.findAll('.sidebar__item')
+    expect(entries.length).toBe(2)
+    expect(entries[0]?.text()).toContain('授权工作台')
+    expect(entries[1]?.text()).toContain('日志信息')
+  })
+})
+
+describe('管理员入口', () => {
+  it('未解锁时显示只读模式与解锁入口', async () => {
+    adminStatus = { ...adminStatus, unlocked: false }
+    const wrapper = mount(App, { global: { stubs: { teleport: true } } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('只读模式')
+    expect(wrapper.findAll('button').some((button) => button.text() === '解锁')).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('未设置口令时提示先设置管理员口令', async () => {
+    adminStatus = { ...adminStatus, credentialConfigured: false, unlocked: false }
+    const wrapper = mount(App, { global: { stubs: { teleport: true } } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('未设置管理员口令')
+    expect(wrapper.findAll('button').some((button) => button.text() === '设置管理员口令')).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('已解锁时显示剩余空闲时间与锁定入口', async () => {
+    const wrapper = mount(App, { global: { stubs: { teleport: true } } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('已解锁')
+    expect(wrapper.findAll('button').some((button) => button.text() === '锁定')).toBe(true)
+    wrapper.unmount()
+  })
+
+  it('失败锁定期间显示锁定到期时间', async () => {
+    adminStatus = {
+      ...adminStatus,
+      unlocked: false,
+      lockedOutUntil: '2026-10-24T03:05:00Z',
+      remainingAttempts: 0
+    }
+    const wrapper = mount(App, { global: { stubs: { teleport: true } } })
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('登录已锁定至')
+    wrapper.unmount()
   })
 })

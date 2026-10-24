@@ -1,6 +1,8 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
+import { ADMIN_IPC_CHANNELS } from '@shared/license/admin-contract'
+import { HUB_IPC_CHANNELS } from '@shared/license/hub-contract'
 import { LICENSE_IPC_CHANNELS } from '@shared/license/service-contract'
 
 const root = process.cwd()
@@ -86,6 +88,98 @@ describe('渲染进程权限边界', () => {
     const source = readSource('src/core/services/index.ts')
     expect(source).not.toContain('database:')
     expect(source).not.toContain('SqliteDatabase')
+  })
+})
+
+describe('管理员通道与敏感操作守卫', () => {
+  it('preload 使用了全部已登记的管理员通道', () => {
+    const source = readSource('src/preload/index.ts')
+    const used = [...source.matchAll(/ADMIN_IPC_CHANNELS\.(\w+)/g)].map((match) => match[1])
+    const allowed = Object.keys(ADMIN_IPC_CHANNELS)
+    for (const name of used) {
+      expect(allowed).toContain(name)
+    }
+    expect(new Set(used).size).toBe(allowed.length)
+  })
+
+  it('管理员通道名唯一且带 admin: 前缀', () => {
+    const channels = Object.values(ADMIN_IPC_CHANNELS)
+    expect(new Set(channels).size).toBe(channels.length)
+    for (const channel of channels) {
+      expect(channel).toMatch(/^admin:[a-z-]+$/)
+    }
+  })
+
+  it('写操作与授权能力相关通道都在主进程声明为敏感（需解锁）', () => {
+    const source = readSource('src/main/ipc/license.ts')
+    expect(source).toContain('SENSITIVE_CHANNELS')
+    expect(source).toContain('requireUnlocked()')
+    const required = [
+      'deviceRegister',
+      'deviceUnbind',
+      'deviceLock',
+      'deviceUnlock',
+      'controlImport',
+      'delegatedKeyImport',
+      'licenseIssue',
+      'licenseBatchIssue',
+      'licenseRenew'
+    ]
+    const sensitiveBlock = source.slice(
+      source.indexOf('const SENSITIVE_CHANNELS'),
+      source.indexOf(']', source.indexOf('const SENSITIVE_CHANNELS'))
+    )
+    for (const name of required) {
+      expect(sensitiveBlock).toContain(`LICENSE_IPC_CHANNELS.${name}`)
+    }
+  })
+
+  it('管理员口令相关源码不把口令写入日志或审计上下文', () => {
+    for (const file of ['src/main/ipc/admin.ts', 'src/core/services/admin-session.ts']) {
+      const source = readSource(file)
+      expect(source).not.toContain('console.log')
+      expect(source).not.toContain('console.warn')
+      expect(source).not.toContain('console.error')
+    }
+  })
+})
+
+describe('Hub 通道与网络边界', () => {
+  it('preload 使用了全部已登记的 Hub 通道', () => {
+    const source = readSource('src/preload/index.ts')
+    const used = [...source.matchAll(/HUB_IPC_CHANNELS\.(\w+)/g)].map((match) => match[1])
+    const allowed = Object.keys(HUB_IPC_CHANNELS)
+    for (const name of used) {
+      expect(allowed).toContain(name)
+    }
+    expect(new Set(used).size).toBe(allowed.length)
+  })
+
+  it('Hub 通道名唯一且带 hub: 前缀', () => {
+    const channels = Object.values(HUB_IPC_CHANNELS)
+    expect(new Set(channels).size).toBe(channels.length)
+    for (const channel of channels) {
+      expect(channel).toMatch(/^hub:[a-z-]+$/)
+    }
+  })
+
+  it('Hub 启停通道在 IPC 层要求管理员解锁', () => {
+    const source = readSource('src/main/ipc/hub.ts')
+    expect(source).toContain('requireUnlocked()')
+    expect(source).toContain('HUB_IPC_CHANNELS.hubStart')
+    expect(source).toContain('HUB_IPC_CHANNELS.hubStop')
+  })
+
+  it('网络服务只在主进程实现，渲染进程不引用 socket/fs', () => {
+    const hubSource = readSource('src/main/hub/hub-server.ts')
+    expect(hubSource).toContain("from 'node:dgram'")
+    expect(hubSource).toContain("from 'node:net'")
+    for (const file of walk('src/renderer')) {
+      const source = readFileSync(file, 'utf8')
+      expect(source).not.toContain('node:net')
+      expect(source).not.toContain('node:dgram')
+      expect(source).not.toContain('createServer')
+    }
   })
 })
 

@@ -92,6 +92,14 @@ export interface ReconcileResultDto {
   readonly orphanFilesQuarantined: number
 }
 
+/**
+ * 委托私钥的保护方式。
+ * - encrypted：已用系统加密（Windows DPAPI / safeStorage）保存，可正常使用
+ * - legacy_plaintext：只存在旧的明文 PEM，**不会**被加载使用（避免静默降级）
+ * - unavailable：系统加密不可用，导入与签发都会被拒绝
+ */
+export type DelegatedKeyProtection = 'encrypted' | 'legacy_plaintext' | 'unavailable'
+
 /** 委托签发私钥的配置状态（只返回状态，不返回私钥内容） */
 export interface DelegatedKeyStatusDto {
   readonly configured: boolean
@@ -99,6 +107,10 @@ export interface DelegatedKeyStatusDto {
   readonly matchesControl: boolean | null
   /** 相对于 userData 的位置说明，不含绝对路径 */
   readonly location: string
+  /** 私钥保护方式；决定是否允许签发 */
+  readonly protection: DelegatedKeyProtection
+  /** 保护方式相关的问题说明（例如加密不可用、检测到遗留明文文件） */
+  readonly protectionError: string | null
 }
 
 /** 厂商公钥（信任根）配置状态；未配置时不能验证任何中控证书 */
@@ -122,6 +134,14 @@ export type ServiceErrorCode =
   | 'license_expiry_invalid'
   | 'license_file_error'
   | 'license_verification_failed'
+  // 管理员会话与私钥保护（M2）
+  | 'admin_locked'
+  | 'admin_not_configured'
+  | 'admin_already_configured'
+  | 'admin_invalid_password'
+  | 'admin_password_weak'
+  | 'admin_locked_out'
+  | 'key_protection_unavailable'
   | 'unexpected'
 
 export interface ServiceErrorPayload {

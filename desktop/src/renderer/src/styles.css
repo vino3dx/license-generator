@@ -147,6 +147,20 @@ body {
   color: var(--text-dim);
 }
 
+.workspace__topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.admin-gate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .workspace__body {
   flex: 1;
   padding: 24px;
@@ -213,6 +227,16 @@ body {
   flex-direction: column;
   gap: 16px;
   max-width: 1180px;
+}
+
+.page--wide {
+  max-width: 1360px;
+}
+
+.section-title {
+  margin: 16px 0 8px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .page-header {
@@ -713,4 +737,325 @@ textarea {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* --------------------- 阶段 5：单页授权工作台（左项目 / 右设备） --------------------- */
+
+.workbench {
+  display: grid;
+  grid-template-columns: 268px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  min-height: 100%;
+}
+
+.workbench__side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  padding: 14px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-panel);
+}
+
+.workbench__side-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.workbench__side-head h2 {
+  margin: 0 0 2px;
+  font-size: 14px;
+}
+
+.workbench__side-head p {
+  margin: 0;
+}
+
+.project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.project-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 11px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.project-item:hover {
+  background: var(--bg-elevated);
+}
+
+.project-item--active {
+  background: var(--bg-elevated);
+  border-color: #33508c;
+}
+
+.project-item__name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.project-item__id {
+  max-width: 100%;
+  color: var(--text-dim);
+}
+
+.project-item__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.project-item__warn {
+  color: var(--warn);
+}
+
+.project-item__danger {
+  color: var(--danger);
+}
+
+.workbench__side-foot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+
+.workbench__side-foot .btn {
+  padding: 6px 8px;
+  font-size: 11px;
+  text-align: left;
+}
+
+.workbench__main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.workbench__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+
+.workbench__head h2 {
+  margin: 0 0 4px;
+  font-size: 19px;
+  overflow-wrap: anywhere;
+}
+
+.workbench__head p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.workbench__head-warn {
+  color: var(--warn);
+}
+
+.workbench__head-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.setup {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid #6b4a1f;
+  border-radius: 12px;
+  background: #1b1a16;
+}
+
+.setup--ready {
+  border-color: var(--border);
+  background: var(--bg-panel);
+}
+
+.setup__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.setup__head h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.setup__head p {
+  margin: 0;
+}
+
+.setup__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.setup__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.setup__step {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.setup__step--done {
+  border-color: #245c42;
+}
+
+.setup__index {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text-dim);
+  font-size: 11px;
+}
+
+.setup__step--done .setup__index {
+  background: #12301f;
+  color: var(--ok);
+}
+
+.setup__body {
+  min-width: 0;
+}
+
+.setup__body strong {
+  font-size: 13px;
+}
+
+.setup__body p {
+  margin: 2px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.setup__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.setup__detail {
+  padding-top: 4px;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 18px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--bg);
+}
+
+.empty strong {
+  font-size: 13px;
+}
+
+.empty p {
+  margin: 0;
+  max-width: 560px;
+  overflow-wrap: anywhere;
+}
+
+.empty--main {
+  padding: 32px 24px;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.toolbar__divider {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+}
+
+.table__select {
+  width: 32px;
+  padding-right: 0;
+}
+
+.table__select input {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+}
+
+@media (max-width: 1080px) {
+  .workbench {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .project-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
 }

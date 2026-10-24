@@ -8,6 +8,14 @@ import type {
   ProjectDto,
   ProjectStatus
 } from '@shared/license/service-contract'
+import type {
+  DeliveryKind,
+  DeliveryOrderDto,
+  DeliveryState,
+  DeviceMetaDto,
+  DeviceRequestDto,
+  DeviceRequestKind
+} from '@shared/license/delivery-contract'
 import { getAll, getOne, runStatement, type SqliteDatabase, type SqlRow } from './sqlite'
 
 /* ---------------------------------- projects --------------------------------- */
@@ -459,4 +467,291 @@ export function setSetting(database: SqliteDatabase, key: string, value: string,
     value,
     updatedAt
   )
+}
+
+/* -------------------------------- device meta -------------------------------- */
+
+export function getDeviceMeta(
+  database: SqliteDatabase,
+  projectId: string,
+  deviceId: string
+): DeviceMetaDto | null {
+  const row = getOne(
+    database,
+    'SELECT * FROM device_meta WHERE project_id = ? AND device_id = ?',
+    projectId,
+    deviceId
+  )
+  return row === null ? null : mapDeviceMeta(row)
+}
+
+/** 写入或更新设备展示/通信元数据（不触碰 devices 本身） */
+export function upsertDeviceMeta(database: SqliteDatabase, meta: DeviceMetaDto): void {
+  runStatement(
+    database,
+    `INSERT INTO device_meta (project_id, device_id, label, last_ip, last_seen_at, last_pull_result, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)
+     ON CONFLICT(project_id, device_id) DO UPDATE SET
+       label = excluded.label,
+       last_ip = excluded.last_ip,
+       last_seen_at = excluded.last_seen_at,
+       last_pull_result = excluded.last_pull_result,
+       updated_at = excluded.updated_at`,
+    meta.projectId,
+    meta.deviceId,
+    meta.label,
+    meta.lastIp,
+    meta.lastSeenAt,
+    meta.lastPullResult,
+    meta.updatedAt
+  )
+}
+
+export function listDeviceMeta(
+  database: SqliteDatabase,
+  options: { readonly projectId?: string } = {}
+): DeviceMetaDto[] {
+  const where = options.projectId === undefined ? '' : 'WHERE project_id = ?'
+  const params = options.projectId === undefined ? [] : [options.projectId]
+  return getAll(database, `SELECT * FROM device_meta ${where} ORDER BY project_id ASC, device_id ASC`, ...params).map(
+    mapDeviceMeta
+  )
+}
+
+function mapDeviceMeta(row: SqlRow): DeviceMetaDto {
+  return {
+    projectId: String(row['project_id']),
+    deviceId: String(row['device_id']),
+    label: String(row['label']),
+    lastIp: row['last_ip'] === null ? null : String(row['last_ip']),
+    lastSeenAt: row['last_seen_at'] === null ? null : String(row['last_seen_at']),
+    lastPullResult: row['last_pull_result'] === null ? null : String(row['last_pull_result']),
+    updatedAt: String(row['updated_at'])
+  }
+}
+
+/* ------------------------------ delivery orders ------------------------------ */
+
+export function insertDeliveryOrder(database: SqliteDatabase, order: DeliveryOrderDto): void {
+  runStatement(
+    database,
+    `INSERT INTO delivery_orders (
+       order_id, kind, state, license_id, project_id, device_id, control_license_id, expires_at,
+       attempts, last_error, created_at, updated_at, sent_at, confirmed_at, requested_by
+     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    order.orderId,
+    order.kind,
+    order.state,
+    order.licenseId,
+    order.projectId,
+    order.deviceId,
+    order.controlLicenseId,
+    order.expiresAt,
+    order.attempts,
+    order.lastError,
+    order.createdAt,
+    order.updatedAt,
+    order.sentAt,
+    order.confirmedAt,
+    order.requestedBy
+  )
+}
+
+export function findDeliveryOrder(database: SqliteDatabase, orderId: string): DeliveryOrderDto | null {
+  const row = getOne(database, 'SELECT * FROM delivery_orders WHERE order_id = ?', orderId)
+  return row === null ? null : mapDeliveryOrder(row)
+}
+
+/**
+ * 幂等查询：同一设备 + 同一类型 + 同一到期时间的"进行中"订单（含已确认）。
+ * 与 delivery_orders_active_unique 部分唯一索引使用同一组字段，保证不会重复签发。
+ */
+export function findActiveDeliveryOrder(
+  database: SqliteDatabase,
+  input: {
+    readonly projectId: string
+    readonly deviceId: string
+    readonly kind: DeliveryKind
+    readonly expiresAt: string
+  }
+): DeliveryOrderDto | null {
+  const row = getOne(
+    database,
+    `SELECT * FROM delivery_orders
+     WHERE project_id = ? AND device_id = ? AND kind = ? AND expires_at = ?
+       AND state IN ('generated', 'queued', 'sent', 'confirmed')
+     ORDER BY created_at DESC LIMIT 1`,
+    input.projectId,
+    input.deviceId,
+    input.kind,
+    input.expiresAt
+  )
+  return row === null ? null : mapDeliveryOrder(row)
+}
+
+export interface DeliveryStateUpdate {
+  readonly orderId: string
+  readonly state: DeliveryState
+  readonly at: string
+  readonly lastError: string | null
+  /** 只写一次：已有值不会被空值覆盖 */
+  readonly sentAt?: string | null
+  /** 只写一次：已有值不会被空值覆盖 */
+  readonly confirmedAt?: string | null
+}
+
+/** 状态写入；转换合法性由业务层 assertDeliveryTransition 保证，仓储不做业务判断 */
+export function updateDeliveryOrderState(database: SqliteDatabase, update: DeliveryStateUpdate): void {
+  runStatement(
+    database,
+    `UPDATE delivery_orders
+     SET state = ?, last_error = ?, updated_at = ?,
+         sent_at = COALESCE(?, sent_at),
+         confirmed_at = COALESCE(?, confirmed_at)
+     WHERE order_id = ?`,
+    update.state,
+    update.lastError,
+    update.at,
+    update.sentAt ?? null,
+    update.confirmedAt ?? null,
+    update.orderId
+  )
+}
+
+export function incrementDeliveryAttempts(database: SqliteDatabase, orderId: string, at: string): void {
+  runStatement(
+    database,
+    'UPDATE delivery_orders SET attempts = attempts + 1, updated_at = ? WHERE order_id = ?',
+    at,
+    orderId
+  )
+}
+
+export function listDeliveryOrders(
+  database: SqliteDatabase,
+  options: {
+    readonly projectId?: string
+    readonly deviceId?: string
+    readonly state?: DeliveryState
+    readonly limit?: number
+  } = {}
+): DeliveryOrderDto[] {
+  const conditions: string[] = []
+  const params: string[] = []
+  if (options.projectId !== undefined) {
+    conditions.push('project_id = ?')
+    params.push(options.projectId)
+  }
+  if (options.deviceId !== undefined) {
+    conditions.push('device_id = ?')
+    params.push(options.deviceId)
+  }
+  if (options.state !== undefined) {
+    conditions.push('state = ?')
+    params.push(options.state)
+  }
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+  const limit = Math.max(1, Math.min(options.limit ?? 200, 1000))
+  return getAll(
+    database,
+    `SELECT * FROM delivery_orders ${where} ORDER BY created_at DESC, order_id DESC LIMIT ${limit}`,
+    ...params
+  ).map(mapDeliveryOrder)
+}
+
+function mapDeliveryOrder(row: SqlRow): DeliveryOrderDto {
+  return {
+    orderId: String(row['order_id']),
+    kind: String(row['kind']) as DeliveryKind,
+    state: String(row['state']) as DeliveryState,
+    licenseId: String(row['license_id']),
+    projectId: String(row['project_id']),
+    deviceId: String(row['device_id']),
+    controlLicenseId: String(row['control_license_id']),
+    expiresAt: String(row['expires_at']),
+    attempts: Number(row['attempts']),
+    lastError: row['last_error'] === null ? null : String(row['last_error']),
+    createdAt: String(row['created_at']),
+    updatedAt: String(row['updated_at']),
+    sentAt: row['sent_at'] === null ? null : String(row['sent_at']),
+    confirmedAt: row['confirmed_at'] === null ? null : String(row['confirmed_at']),
+    requestedBy: String(row['requested_by'])
+  }
+}
+
+/* ------------------------------ device requests ------------------------------ */
+
+export interface DeviceRequestInput {
+  readonly at: string
+  readonly projectId: string
+  readonly deviceId: string
+  readonly ip: string | null
+  readonly kind: DeviceRequestKind
+  readonly currentLicenseId: string | null
+  readonly currentExpiresAt: string | null
+  readonly result: string
+  readonly reason: string | null
+  readonly orderId: string | null
+}
+
+/** 追加一条通信记录，返回自增 id */
+export function appendDeviceRequest(database: SqliteDatabase, input: DeviceRequestInput): number {
+  const result = database
+    .prepare(
+      `INSERT INTO device_requests (
+         at, project_id, device_id, ip, kind, current_license_id, current_expires_at, result, reason, order_id
+       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      input.at,
+      input.projectId,
+      input.deviceId,
+      input.ip,
+      input.kind,
+      input.currentLicenseId,
+      input.currentExpiresAt,
+      input.result,
+      input.reason,
+      input.orderId
+    )
+  return Number(result.lastInsertRowid)
+}
+
+export function listDeviceRequests(
+  database: SqliteDatabase,
+  options: {
+    readonly projectId?: string
+    readonly deviceId?: string
+    readonly limit?: number
+  } = {}
+): DeviceRequestDto[] {
+  const conditions: string[] = []
+  const params: string[] = []
+  if (options.projectId !== undefined) {
+    conditions.push('project_id = ?')
+    params.push(options.projectId)
+  }
+  if (options.deviceId !== undefined) {
+    conditions.push('device_id = ?')
+    params.push(options.deviceId)
+  }
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+  const limit = Math.max(1, Math.min(options.limit ?? 200, 1000))
+  return getAll(
+    database,
+    `SELECT * FROM device_requests ${where} ORDER BY id DESC LIMIT ${limit}`,
+    ...params
+  ).map((row) => ({
+    id: Number(row['id']),
+    at: String(row['at']),
+    projectId: String(row['project_id']),
+    deviceId: String(row['device_id']),
+    ip: row['ip'] === null ? null : String(row['ip']),
+    kind: String(row['kind']) as DeviceRequestKind,
+    currentLicenseId: row['current_license_id'] === null ? null : String(row['current_license_id']),
+    currentExpiresAt: row['current_expires_at'] === null ? null : String(row['current_expires_at']),
+    result: String(row['result']),
+    reason: row['reason'] === null ? null : String(row['reason']),
+    orderId: row['order_id'] === null ? null : String(row['order_id'])
+  }))
 }

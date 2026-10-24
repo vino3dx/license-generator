@@ -107,7 +107,7 @@ function buildExpression(expectedUserData) {
   }
   const navReady = await waitFor(() => {
     const nav = document.querySelector('.sidebar__nav')
-    return nav !== null && nav.children.length === 4
+    return nav !== null && nav.children.length === 2
   })
   const app = window.aegis
   const license = app.license
@@ -140,7 +140,7 @@ function buildExpression(expectedUserData) {
     hasApi: typeof license.listProjects === 'function',
     navReady,
     navCount: nav === null ? 0 : nav.children.length,
-    hasProjectPage: document.body.innerText.includes('项目管理'),
+    hasLicensePage: document.body.innerText.includes('授权工作台'),
     userDataPath: info.userDataPath,
     isolated,
     projectsOk: projects.ok,
@@ -193,8 +193,8 @@ try {
 
   const checks = {
     hasApi: payload.hasApi === true,
-    fourEntries: payload.navCount === 4,
-    projectPageRendered: payload.hasProjectPage === true,
+    twoEntries: payload.navCount === 2,
+    licensePageRendered: payload.hasLicensePage === true,
     isolatedUserData: payload.isolated === true,
     projectListWorks: payload.projectsOk === true,
     vendorKeyStatusWorks: payload.vendorOk === true,

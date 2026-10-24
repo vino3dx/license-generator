@@ -47,3 +47,19 @@ export function appApi(): Window['aegis'] {
   }
   return window.aegis
 }
+
+/** 管理员会话 API；解锁状态由主进程持有，这里只是通道 */
+export function adminApi(): Window['aegis']['admin'] {
+  if (typeof window === 'undefined' || window.aegis === undefined) {
+    throw new Error('Aegis 接口不可用：请通过 Electron 客户端运行')
+  }
+  return window.aegis.admin
+}
+
+/** 本地 Hub API；启停由主进程执行，渲染进程不接触 socket */
+export function hubApi(): Window['aegis']['hub'] {
+  if (typeof window === 'undefined' || window.aegis === undefined) {
+    throw new Error('Aegis 接口不可用：请通过 Electron 客户端运行')
+  }
+  return window.aegis.hub
+}

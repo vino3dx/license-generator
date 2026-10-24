@@ -23,6 +23,7 @@ const PEM_BEGIN_MARK = '-----BEGIN '
 const PEM_PRIVATE_MARK = ['PRIVATE', 'KEY'].join(' ')
 
 export function getDelegatedKeyStatus(deps: ResolvedDependencies): DelegatedKeyStatusDto {
+  const protection = deps.delegatedKeys.protection?.() ?? { state: 'encrypted' as const, error: null }
   let configured = false
   let matchesControl: boolean | null = null
   try {
@@ -38,9 +39,16 @@ export function getDelegatedKeyStatus(deps: ResolvedDependencies): DelegatedKeyS
       }
     }
   } catch {
+    // 加密不可用/文件损坏：保持"未配置"，具体原因由 protection 状态给出
     configured = false
   }
-  return { configured, matchesControl, location: LOCATION }
+  return {
+    configured,
+    matchesControl,
+    location: LOCATION,
+    protection: protection.state,
+    protectionError: protection.error
+  }
 }
 
 export function importDelegatedKey(deps: ResolvedDependencies, pemText: string): DelegatedKeyStatusDto {
@@ -92,6 +100,23 @@ export function importDelegatedKey(deps: ResolvedDependencies, pemText: string):
 
   if (typeof deps.delegatedKeys.save !== 'function') {
     throw new ServiceError('unexpected', '当前密钥存储不支持导入')
+  }
+  // 加密不可用时必须在写入前拒绝：不允许静默降级为明文存储
+  const protection = deps.delegatedKeys.protection?.()
+  if (protection !== undefined && protection.state === 'unavailable') {
+    writeAudit(deps, {
+      at,
+      action: 'delegated_key_import',
+      targetType: 'delegated-key',
+      targetId: 'local',
+      result: 'failure',
+      errorCode: 'key_protection_unavailable',
+      context: null
+    })
+    throw new ServiceError(
+      'key_protection_unavailable',
+      protection.error ?? '系统安全存储不可用，拒绝以明文保存委托私钥'
+    )
   }
   deps.delegatedKeys.save(`${text}\n`)
 

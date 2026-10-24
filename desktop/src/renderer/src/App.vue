@@ -4,6 +4,7 @@ import { WORKSPACE_ENTRIES, type AppInfo, type WorkspaceKey } from '@shared/ipc-
 import type { ControlCertificateDto } from '@shared/license/service-contract'
 import LicenseManageView from '@renderer/views/LicenseManageView.vue'
 import RecordsView from '@renderer/views/RecordsView.vue'
+import AdminGate from '@renderer/components/AdminGate.vue'
 import StatusBadge from '@renderer/components/StatusBadge.vue'
 import { appApi, licenseApi } from '@renderer/lib/api'
 import { daysUntil } from '@renderer/lib/format'
@@ -54,7 +55,7 @@ const controlState = computed<{ tone: 'ok' | 'warn' | 'danger' | 'muted'; text: 
   if (!lastCertificate.value.isActive) {
     return {
       tone: 'warn',
-      text: `中控授权 ${lastCertificate.value.licenseId} 已作废（一次性证书），需导入新证书`
+      text: `中控授权 ${lastCertificate.value.licenseId} 已作废（历史一次性规则），需导入新证书`
     }
   }
   return {
@@ -126,9 +127,12 @@ onMounted(async () => {
     <main class="workspace">
       <header class="workspace__topbar">
         <StatusBadge :tone="controlState.tone" :text="controlState.text" />
-        <span class="workspace__meta">
-          {{ appInfo === null ? '正在读取运行信息…' : `v${appInfo.appVersion} · Electron ${appInfo.electronVersion} · ${appInfo.platform}` }}
-        </span>
+        <div class="workspace__topbar-right">
+          <AdminGate />
+          <span class="workspace__meta">
+            {{ appInfo === null ? '正在读取运行信息…' : `v${appInfo.appVersion} · Electron ${appInfo.electronVersion} · ${appInfo.platform}` }}
+          </span>
+        </div>
       </header>
 
       <div class="workspace__body">

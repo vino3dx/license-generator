@@ -1,12 +1,19 @@
 extends RefCounted
 ##
-## Aegis 授权协议 v1 的子机侧验签器（纯 GDScript，无原生依赖）。
+## Aegis 授权协议 v3 的子机侧验签器（纯 GDScript，无原生依赖）。
+##
+## v3 与 v1 的差异（与桌面端 `src/shared/license/protocol.ts` 对齐）：
+## - schema_version 由 1 升为 3；
+## - vendor-control 载荷不再包含 `features` 字段；
+## - machine-license 载荷不再包含 `features`，改为内嵌 `control_cert`
+##   （base64url 编码的完整中控证书信封，使 license.dat 自包含）。
 ##
 ## 设计约束（与 docs/license-protocol.md 一致）：
 ## - 只用 modulus / exponent 表示公钥，不解析 PEM / DER，也不调用 CryptoKey；
 ## - 只做验签（公钥运算），不包含任何私钥或私钥运算；
 ## - 校验失败一律返回错误码字符串，不抛异常、不 return null；
 ## - 文件自包含（无 class_name、无 autoload、无外部依赖），便于后续整体复制进 Godot 插件。
+## - 严格字段集合不放宽：多一个或少一个字段都必须拒绝。
 ##
 ## 用法：
 ##   const AegisRsaVerifier = preload("res://aegis_rsa_verify.gd")
@@ -14,7 +21,8 @@ extends RefCounted
 ##   if result["ok"]: var payload: Dictionary = result["payload"]
 
 const ENVELOPE_MARKER := "license-envelope"
-const SCHEMA_VERSION := 1
+## 与桌面端 LICENSE_PROTOCOL_ID = "aegis-license/v3"、LICENSE_SCHEMA_VERSION = 3 一致
+const SCHEMA_VERSION := 3
 const ALGORITHM := "RS256"
 const MAX_ENVELOPE_BYTES := 16384
 const MAX_PAYLOAD_BYTES := 8192
@@ -36,6 +44,7 @@ const StrictJson = preload("res://aegis_strict_json.gd")
 
 const ENVELOPE_KEYS := ["aegis", "schema_version", "license_type", "alg", "kid", "payload", "signature"]
 const PUBLIC_KEY_KEYS := ["kty", "n", "e"]
+## v3 vendor-control 字段集合：无 features
 const VENDOR_PAYLOAD_KEYS := [
 	"schema_version",
 	"license_type",
@@ -44,9 +53,9 @@ const VENDOR_PAYLOAD_KEYS := [
 	"expires_at",
 	"project_ids",
 	"max_devices",
-	"features",
 	"delegated_public_key",
 ]
+## v3 machine-license 字段集合：无 features，新增 control_cert
 const MACHINE_PAYLOAD_KEYS := [
 	"schema_version",
 	"license_type",
@@ -57,7 +66,7 @@ const MACHINE_PAYLOAD_KEYS := [
 	"issued_at",
 	"expires_at",
 	"status",
-	"features",
+	"control_cert",
 ]
 
 static var _key_cache: Dictionary = {}
@@ -491,8 +500,7 @@ static func _validate_payload(payload: Dictionary, expected_type: String) -> Str
 		return "payload_invalid"
 	if _parse_time(payload["expires_at"]) <= _parse_time(payload["issued_at"]):
 		return "payload_invalid"
-	if not _validate_string_list(payload["features"], false):
-		return "payload_invalid"
+	# v3 已移除 features 字段；v3 之前的版本会在这里因字段集合不匹配被拒绝
 
 	if expected_type == TYPE_VENDOR:
 		if not _validate_string_list(payload["project_ids"], true) or (payload["project_ids"] as Array).is_empty():
@@ -511,6 +519,16 @@ static func _validate_payload(payload: Dictionary, expected_type: String) -> Str
 			if not _is_identifier(payload[field]):
 				return "payload_invalid"
 		if typeof(payload["status"]) != TYPE_STRING or (payload["status"] != "active" and payload["status"] != "revoked"):
+			return "payload_invalid"
+		# v3：control_cert 是 base64url 编码的完整中控证书信封；只做结构与长度校验，
+		# 签名有效性由 aegis_license.gd 用厂商公钥单独验证
+		if typeof(payload["control_cert"]) != TYPE_STRING or String(payload["control_cert"]).is_empty():
+			return "payload_invalid"
+		var embedded := _decode_base64url(String(payload["control_cert"]))
+		if not embedded["ok"]:
+			return "base64url_invalid"
+		var embedded_bytes: PackedByteArray = embedded["bytes"]
+		if embedded_bytes.is_empty() or embedded_bytes.size() > MAX_ENVELOPE_BYTES:
 			return "payload_invalid"
 	return ""
 

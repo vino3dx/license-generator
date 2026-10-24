@@ -33,6 +33,6 @@ export interface WorkspaceEntry {
 
 /** 主界面两个入口，界面与后续路由/权限共用同一份定义 */
 export const WORKSPACE_ENTRIES: readonly WorkspaceEntry[] = [
-  { key: 'license', title: '授权管理', summary: '导入中控证书 → 登记设备 → 签发授权' },
+  { key: 'license', title: '授权工作台', summary: '登记设备 → 批量签发、续期与查看授权记录' },
   { key: 'records', title: '日志信息', summary: '签发结果、证书作废与审计日志' }
 ] as const

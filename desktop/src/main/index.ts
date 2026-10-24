@@ -1,5 +1,6 @@
 import { app, BrowserWindow, Menu } from 'electron'
 import { registerIpcHandlers } from './ipc'
+import { disposeHub } from './hub/hub-runtime'
 import { closeLicenseRuntime, initLicenseRuntime } from './license-runtime'
 import { createMainWindow } from './window'
 
@@ -49,6 +50,8 @@ if (!gotLock) {
   })
 
   app.on('will-quit', () => {
+    // 先释放网络监听，再关数据库；不能残留 47820/47821 端口
+    disposeHub()
     closeLicenseRuntime()
   })
 }

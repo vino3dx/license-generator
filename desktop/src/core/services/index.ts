@@ -1,4 +1,7 @@
 import { listAuditLogs } from '@core/db'
+import type { AdminStatusDto } from '@shared/license/admin-contract'
+import type { DeviceRequestDto } from '@shared/license/delivery-contract'
+import type { PullResultDto } from '@shared/license/hub-contract'
 import type {
   AuditLogDto,
   BatchIssueResultDto,
@@ -11,6 +14,14 @@ import type {
   QuotaUsageDto,
   ReconcileResultDto
 } from '@shared/license/service-contract'
+import { AdminSession } from './admin-session'
+import {
+  clientSchemaReason,
+  handleHubPull,
+  isClientSchemaSupported,
+  listHubRequests,
+  type HubPullInput
+} from './delivery'
 import {
   createProject,
   getDeviceLicenseStatus,
@@ -79,6 +90,27 @@ export interface LicenseServices {
     status(): DelegatedKeyStatusDto
     import(pem: string): DelegatedKeyStatusDto
   }
+  /**
+   * 管理员会话：口令校验与解锁状态全部在主进程。
+   * 敏感操作前必须调用 requireUnlocked()（IPC 层统一执行），不能只靠界面禁用按钮。
+   */
+  readonly admin: {
+    status(): AdminStatusDto
+    setup(password: string): AdminStatusDto
+    unlock(password: string): AdminStatusDto
+    lock(): AdminStatusDto
+    changePassword(currentPassword: string, newPassword: string): AdminStatusDto
+    requireUnlocked(): void
+    touch(): void
+  }
+  /**
+   * 局域网下发（Hub）领域逻辑：只做决策与留证，网络 I/O 在主进程 hub 模块。
+   */
+  readonly hub: {
+    handlePull(input: HubPullInput): PullResultDto
+    listRequests(options?: { readonly limit?: number; readonly deviceId?: string }): DeviceRequestDto[]
+    clientSchema(): { readonly supported: boolean; readonly reason: string | null }
+  }
   readonly maintenance: {
     reconcile(): ReconcileResultDto
   }
@@ -86,6 +118,7 @@ export interface LicenseServices {
 
 export function createLicenseServices(dependencies: ServiceDependencies): LicenseServices {
   const deps: ResolvedDependencies = resolveDependencies(dependencies)
+  const adminSession = new AdminSession(deps)
 
   return {
     projects: {
@@ -127,6 +160,21 @@ export function createLicenseServices(dependencies: ServiceDependencies): Licens
       status: () => getDelegatedKeyStatus(deps),
       import: (pem) => importDelegatedKey(deps, pem)
     },
+    admin: {
+      status: () => adminSession.status(),
+      setup: (password) => adminSession.setup(password),
+      unlock: (password) => adminSession.unlock(password),
+      lock: () => adminSession.lock(),
+      changePassword: (currentPassword, newPassword) =>
+        adminSession.changePassword(currentPassword, newPassword),
+      requireUnlocked: () => adminSession.requireUnlocked(),
+      touch: () => adminSession.touch()
+    },
+    hub: {
+      handlePull: (input) => handleHubPull(deps, input),
+      listRequests: (options) => listHubRequests(deps, options ?? {}),
+      clientSchema: () => ({ supported: isClientSchemaSupported(), reason: clientSchemaReason() })
+    },
     maintenance: {
       reconcile: () => reconcileLicenseStorage(deps)
     }
@@ -134,8 +182,39 @@ export function createLicenseServices(dependencies: ServiceDependencies): Licens
 }
 
 export { ServiceError, isServiceError, toServiceErrorPayload } from './errors'
-export { FileDelegatedKeyStore, createInMemoryDelegatedKeyStore, samePublicKey } from './delegated-key'
-export type { DelegatedKey, DelegatedKeyStore } from './delegated-key'
+export {
+  FileDelegatedKeyStore,
+  createInMemoryDelegatedKeyStore,
+  samePublicKey
+} from './delegated-key'
+export type {
+  DelegatedKey,
+  DelegatedKeyStore,
+  KeyProtectionStatus,
+  KeyProtectionState,
+  KeyProtector
+} from './delegated-key'
+export { EncryptedFileDelegatedKeyStore } from './encrypted-key-store'
+export { AdminSession, createAdminSession, DEFAULT_IDLE_TIMEOUT_MS } from './admin-session'
+export type { AdminSessionOptions } from './admin-session'
+export {
+  activeLockout,
+  assertAdminPasswordPolicy,
+  clearAdminFailures,
+  isAdminConfigured,
+  readThrottle,
+  recordAdminFailure,
+  verifyAdminPassword,
+  writeAdminPassword
+} from './admin-credential'
+export type { ThrottlePolicy, ThrottleRecord } from './admin-credential'
+export {
+  assertDeliveryTransition,
+  canTransitionDelivery,
+  deliveryIdempotencyKey,
+  isDeliveryActiveState,
+  isDeliveryTerminalState
+} from './delivery-state'
 export { FsLicenseFileStore } from './license-files'
 export type { LicenseFileStore } from './license-files'
 export type { ServiceDependencies } from './context'

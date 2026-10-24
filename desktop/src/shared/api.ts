@@ -1,4 +1,7 @@
 import type { AppInfo } from './ipc-contract'
+import type { AdminStatusDto } from './license/admin-contract'
+import type { DeviceRequestDto } from './license/delivery-contract'
+import type { HubStatusDto } from './license/hub-contract'
 import type {
   AuditLogDto,
   BatchIssueResultDto,
@@ -20,6 +23,27 @@ import type {
  */
 export interface AegisApi {
   getAppInfo(): Promise<AppInfo>
+  /**
+   * 管理员会话：口令只单向传给主进程，返回结果不含哈希/派生值。
+   * 解锁状态由主进程持有，渲染进程无法通过任何参数伪造。
+   */
+  admin: {
+    status(): Promise<IpcResult<AdminStatusDto>>
+    setup(input: { readonly password: string }): Promise<IpcResult<AdminStatusDto>>
+    unlock(input: { readonly password: string }): Promise<IpcResult<AdminStatusDto>>
+    lock(): Promise<IpcResult<AdminStatusDto>>
+    changePassword(input: {
+      readonly currentPassword: string
+      readonly newPassword: string
+    }): Promise<IpcResult<AdminStatusDto>>
+  }
+  /** 本地 Hub（UDP 47820 / TCP 47821）；启动与停止需要管理员解锁 */
+  hub: {
+    status(): Promise<IpcResult<HubStatusDto>>
+    start(): Promise<IpcResult<HubStatusDto>>
+    stop(): Promise<IpcResult<HubStatusDto>>
+    requests(options?: { readonly limit?: number }): Promise<IpcResult<DeviceRequestDto[]>>
+  }
   license: {
     listProjects(): Promise<IpcResult<ProjectDto[]>>
     createProject(input: { readonly projectId: string; readonly name: string }): Promise<IpcResult<ProjectDto>>

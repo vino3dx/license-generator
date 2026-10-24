@@ -7,11 +7,13 @@ import {
   createInMemoryDelegatedKeyStore,
   createLicenseServices,
   FsLicenseFileStore,
+  type DelegatedKeyStore,
   type LicenseFileStore,
   type LicenseServices
 } from '@core/services'
 import { exportPublicKeyParams } from '@core/license/rsa-keys'
 import type { VendorCertificateInput } from '@core/license/payloads'
+import type { RsaPublicKeyParams } from '@shared/license/protocol'
 import { issueVendorCertificate } from '@core/license/vendor-license'
 import { loadTestPrivateKey, loadTestPublicKey, makeVendorInput } from '../fixtures/test-keys'
 
@@ -25,6 +27,10 @@ export interface Harness {
   readonly files: LicenseFileStore
   readonly vendorKey: KeyObject
   readonly delegateKey: KeyObject
+  /** 厂商测试公钥参数（用于在同一数据库上重建服务实例，例如模拟重启） */
+  readonly vendorPublicParams: RsaPublicKeyParams
+  /** 本机委托私钥存储（内存实现，仅供测试重建服务） */
+  readonly delegatedKeys: DelegatedKeyStore
   /** 用厂商测试私钥签一张中控证书（只用于测试） */
   controlEnvelope(overrides?: Partial<VendorCertificateInput>): string
   cleanup(): void
@@ -47,15 +53,17 @@ export function createHarness(options: HarnessOptions = {}): Harness {
   const vendorKey = loadTestPrivateKey('vendor-test')
   const delegateKey = loadTestPrivateKey('delegate-test')
   const delegatePublic = exportPublicKeyParams(loadTestPublicKey('delegate-test'))
+  const vendorPublicParams = exportPublicKeyParams(loadTestPublicKey('vendor-test'))
+  const delegatedKeys = createInMemoryDelegatedKeyStore(
+    options.delegatePem ??
+      readFileSync(join(process.cwd(), 'tests', 'fixtures', 'keys', 'delegate-test.private.pem'), 'utf8')
+  )
 
   const services = createLicenseServices({
     database,
     files,
-    delegatedKeys: createInMemoryDelegatedKeyStore(
-      options.delegatePem ??
-        readFileSync(join(process.cwd(), 'tests', 'fixtures', 'keys', 'delegate-test.private.pem'), 'utf8')
-    ),
-    vendorPublicKey: exportPublicKeyParams(loadTestPublicKey('vendor-test')),
+    delegatedKeys,
+    vendorPublicKey: vendorPublicParams,
     clock: options.clock ?? (() => FIXED_NOW)
   })
 
@@ -67,6 +75,8 @@ export function createHarness(options: HarnessOptions = {}): Harness {
     files,
     vendorKey,
     delegateKey,
+    vendorPublicParams,
+    delegatedKeys,
     controlEnvelope: (overrides = {}) =>
       issueVendorCertificate(
         // 默认不限项目，需要验证项目范围时由用例显式覆盖 projectIds

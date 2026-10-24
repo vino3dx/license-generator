@@ -2,7 +2,6 @@ import { createHash, randomBytes } from 'node:crypto'
 import type { KeyObject } from 'node:crypto'
 import {
   countBoundDevices,
-  deactivateControlCertificate,
   deleteLicense,
   findCurrentLicense,
   insertLicense,
@@ -296,18 +295,8 @@ function commitPrepared(
         context: JSON.stringify({ count: prepared.length })
       })
     }
-    // 一次性证书（用户 2026-10-23 决策）：签发成功后证书立即作废，再次签发必须导入新证书。
-    // 与文件、记录放在同一事务：要么都成功，要么整体回滚，不会出现"证书作废但授权没写"。
-    deactivateControlCertificate(deps.database, certificate.payload.license_id)
-    writeAudit(deps, {
-      at,
-      action: 'control_certificate_consume',
-      targetType: 'control-certificate',
-      targetId: certificate.payload.license_id,
-      result: 'success',
-      errorCode: null,
-      context: JSON.stringify({ issuedLicenses: prepared.length })
-    })
+    // 证书可重复使用（2026-10-24 决策）：签发/续期不再消费证书。
+    // 证书仍由有效期、项目范围与 max_devices 约束；过期/验证失败在 loadVerifiedControlCertificate 处拒绝。
     })
   } catch (error) {
     // 数据库提交失败：文件已经落盘，按相反顺序补偿，避免出现"有文件没记录"的授权
@@ -398,6 +387,15 @@ function requireDelegatedKey(
     throw new ServiceError('delegated_key_mismatch', '本机委托私钥与中控证书不匹配')
   }
   return delegated.privateKey
+}
+
+/**
+ * 服务默认有效期（90 天，且不超过中控证书到期）。
+ * 手工签发与局域网下发必须共用同一规则，不能在网络层另写一套。
+ */
+export function resolveDefaultExpiry(deps: ResolvedDependencies): string {
+  const certificate = loadVerifiedControlCertificate(deps)
+  return resolveExpiry(undefined, deps.now().getTime(), parseTimestamp(certificate.payload.expires_at))
 }
 
 function resolveExpiry(requested: string | undefined, nowMs: number, controlExpiresAt: number): string {

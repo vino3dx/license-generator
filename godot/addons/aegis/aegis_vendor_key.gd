@@ -12,7 +12,7 @@ extends RefCounted
 
 const VENDOR_PUBLIC_KEY := {
 	"kty": "RSA",
-	"n": "",
+	"n": "k4QuBSfdD87-0g9lnl4i45bILSsuEREIAF2NvyTLd_o87TC9otNg6oUhKaCVBi9za8Ir4xcQGr7ayySzBC10lFUziT3xmR1HgxW65Eqvcr3UK3_iIuOR-rumFtaCjEMeDFJf_TwHO4_HcXgqtg4MJGkvCVCRE5Ov2egzlb4_s8MClgc7R4oX2sllz36be2PnNPjdey7SVz1wpS9G80ffCtzQv7We8tpgC1vAICnDPPNClVzDVa_7wcxy89Om9s-RuISLYVtoS1IL43_FecP1ViG8QUZ4diajwOxo0MeRR_yoi6-60OF9zZ8_PflD44nG_IPbE2NaS5O7ysovH4oUuQ",
 	"e": "AQAB"
 }
 

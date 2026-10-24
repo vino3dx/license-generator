@@ -1,5 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC_CHANNELS, type AppInfo } from '@shared/ipc-contract'
+import { ADMIN_IPC_CHANNELS } from '@shared/license/admin-contract'
+import { HUB_IPC_CHANNELS } from '@shared/license/hub-contract'
 import { LICENSE_IPC_CHANNELS } from '@shared/license/service-contract'
 import type { AegisApi } from '@shared/api'
 
@@ -9,6 +11,19 @@ import type { AegisApi } from '@shared/api'
  */
 const api: AegisApi = {
   getAppInfo: (): Promise<AppInfo> => ipcRenderer.invoke(IPC_CHANNELS.appGetInfo),
+  admin: {
+    status: () => ipcRenderer.invoke(ADMIN_IPC_CHANNELS.adminStatus),
+    setup: (input) => ipcRenderer.invoke(ADMIN_IPC_CHANNELS.adminSetup, input),
+    unlock: (input) => ipcRenderer.invoke(ADMIN_IPC_CHANNELS.adminUnlock, input),
+    lock: () => ipcRenderer.invoke(ADMIN_IPC_CHANNELS.adminLock),
+    changePassword: (input) => ipcRenderer.invoke(ADMIN_IPC_CHANNELS.adminChangePassword, input)
+  },
+  hub: {
+    status: () => ipcRenderer.invoke(HUB_IPC_CHANNELS.hubStatus),
+    start: () => ipcRenderer.invoke(HUB_IPC_CHANNELS.hubStart),
+    stop: () => ipcRenderer.invoke(HUB_IPC_CHANNELS.hubStop),
+    requests: (options) => ipcRenderer.invoke(HUB_IPC_CHANNELS.hubRequests, options)
+  },
   license: {
     listProjects: () => ipcRenderer.invoke(LICENSE_IPC_CHANNELS.projectList),
     createProject: (input) => ipcRenderer.invoke(LICENSE_IPC_CHANNELS.projectCreate, input),

@@ -4,6 +4,7 @@ import { dirname } from 'node:path'
 import { exportPublicKeyParams, loadPrivateKeyFromPem } from '@core/license/rsa-keys'
 import { isLicenseError } from '@core/license/errors'
 import type { RsaPublicKeyParams } from '@shared/license/protocol'
+import type { DelegatedKeyProtection } from '@shared/license/service-contract'
 import { ServiceError } from './errors'
 
 export interface DelegatedKey {
@@ -11,17 +12,37 @@ export interface DelegatedKey {
   readonly publicParams: RsaPublicKeyParams
 }
 
+/** 与 shared 的 DelegatedKeyProtection 对应，避免两处枚举漂移 */
+export type KeyProtectionState = DelegatedKeyProtection
+
+export interface KeyProtectionStatus {
+  readonly state: KeyProtectionState
+  /** 非空表示存在需要操作员处理的安全问题（例如遗留明文、系统加密不可用） */
+  readonly error: string | null
+}
+
+/**
+ * 系统安全存储的抽象（生产实现为 Electron safeStorage / Windows DPAPI，测试用可控实现）。
+ * 业务层只依赖该接口，"加密是否可用"由实现回答，不允许降级为明文。
+ */
+export interface KeyProtector {
+  readonly available: boolean
+  encrypt(plaintext: string): Buffer
+  decrypt(payload: Buffer): string
+}
+
 /**
  * 委托签发私钥的读取接口。
  *
- * 安全边界（已知限制）：私钥保存在客户中控的本机文件里，普通 Windows 环境无法保证不被提取；
- * 本接口只负责"放在数据库/日志/构建产物之外"。后续阶段可替换为 Electron safeStorage
- * 或系统凭据存储的实现，业务层无需改动。
+ * 安全边界（M2）：私钥必须由系统安全存储加密后落盘；明文 PEM 只允许存在于待迁移的旧文件里，
+ * 且不会被加载使用。本接口不返回任何可被渲染进程拿到的密钥内容。
  */
 export interface DelegatedKeyStore {
   load(): DelegatedKey | null
   /** 可选：支持导入的实现（文件存储）。内存实现不提供，导入时会显式报错。 */
   save?(pem: string): void
+  /** 可选：密钥保护状态；未实现的存储（如测试内存实现）视为不涉及落盘 */
+  protection?(): KeyProtectionStatus
 }
 
 export class FileDelegatedKeyStore implements DelegatedKeyStore {
